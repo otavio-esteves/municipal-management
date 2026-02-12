@@ -26,7 +26,7 @@ class SecretariatManager extends Component
             'secretariats' => Secretariat::where('name', 'like', '%'.$this->search.'%')
                 ->withCount('categories')
                 ->paginate(10)
-        ]);
+        ])->layout('layouts.app');
     }
 
     public function create()

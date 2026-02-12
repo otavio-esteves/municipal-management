@@ -17,10 +17,11 @@ return new class extends Migration
                 ->constrained()
                 ->onDelete('cascade');
             $row->string('name');
-            $row->string('slug')->unique();
+            $row->string('slug');
             $row->text('description')->nullable();
             $row->softDeletes();
             $row->timestamps();
+            $row->unique(['secretariat_id', 'slug']);
         });
     }
 
