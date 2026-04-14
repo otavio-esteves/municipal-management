@@ -39,6 +39,19 @@ class LoginForm extends Form
         }
 
         RateLimiter::clear($this->throttleKey());
+
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        // Redirecionamento inteligente baseado no vínculo do usuário
+        if ($user->secretariat_id) {
+            redirect()->intended(
+                route('secretariats.ods', ['secretariat' => $user->secretariat_id])
+            );
+        } else {
+            // Fallback para o dashboard caso seja um admin geral sem secretaria fixa
+            redirect()->intended(route('dashboard', absolute: false));
+        }
     }
 
     /**

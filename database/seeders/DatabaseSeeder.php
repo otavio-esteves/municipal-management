@@ -2,10 +2,11 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
+use App\Models\User;
 
 class DatabaseSeeder extends Seeder
 {
@@ -16,12 +17,18 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        $nomeSecretaria = 'Secretaria de Urbanismo';
+
+        $secretaria = \App\Models\Secretariat::updateOrCreate(
+            ['name' => $nomeSecretaria],
+            ['slug' => Str::slug($nomeSecretaria)]
+        );
 
         User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',
             'password' => Hash::make('password'),
+            'secretariat_id' => $secretaria->id,
             'email_verified_at' => now(),
         ]);
     }

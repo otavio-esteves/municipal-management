@@ -45,4 +45,9 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
         ];
     }
+
+    public function secretariat()
+    {
+        return $this->belongsTo(Secretariat::class);
+    }
 }
