@@ -21,4 +21,9 @@ class Category extends Model
     {
         return $this->belongsTo(Secretariat::class);
     }
+
+    public function serviceOrders(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ServiceOrder::class);
+    }
 }

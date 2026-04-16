@@ -4,15 +4,16 @@ namespace App\Livewire\Secretariat;
 
 use Livewire\Component;
 use App\Models\Secretariat;
-// use App\Models\ServiceOrder; // Descomente quando o model for criado
-use Livewire\Attributes\Layout;
+use App\Models\ServiceOrder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
-#[Layout('layouts.app')]
 class ServiceOrderManager extends Component
 {
     public Secretariat $secretariat;
+    public $search = '';
 
-    // Propriedades para o Modal de Criação/Edição ligadas via wire:model
+    // Propriedades do formulário
     public $odsId = null;
     public $title = '';
     public $location = '';
@@ -20,9 +21,6 @@ class ServiceOrderManager extends Component
     public $dueDate = '';
     public $isUrgent = false;
     public $observation = '';
-    
-    // Na fase 3, o checklist será gerenciado aqui ou em um componente filho
-    public $checklist = [];
 
     public function mount(Secretariat $secretariat)
     {
@@ -31,34 +29,79 @@ class ServiceOrderManager extends Component
 
     public function save()
     {
+        // 1. Log para saber se o clique chegou no servidor (Verifique seu terminal!)
+        Log::info('Tentando salvar ODS...', ['title' => $this->title, 'cat' => $this->categoryId]);
+
         $this->validate([
-            'title' => 'required|string|max:255',
+            'title' => 'required|min:3',
             'categoryId' => 'required',
         ]);
 
-        // Lógica de Create ou Update (adaptar para seu ServiceOrder)
-        // ServiceOrder::updateOrCreate(['id' => $this->odsId], [...]);
+        try {
+            DB::beginTransaction();
 
-        $this->resetForm();
-        $this->dispatch('ods-saved'); // Dispara evento para fechar o modal via Alpine
+            $data = [
+                'title' => $this->title,
+                'location' => $this->location,
+                'category_id' => $this->categoryId,
+                'due_date' => $this->dueDate ?: null,
+                'is_urgent' => (bool)$this->isUrgent,
+                'observation' => $this->observation,
+                'secretariat_id' => $this->secretariat->id,
+                'status' => 'pending',
+            ];
+
+            if ($this->odsId) {
+                ServiceOrder::findOrFail($this->odsId)->update($data);
+                session()->flash('success', 'Ordem atualizada com sucesso!');
+            } else {
+                $data['code'] = ServiceOrder::generateCode();
+                ServiceOrder::create($data);
+                session()->flash('success', 'Ordem criada com sucesso!');
+            }
+
+            DB::commit();
+            Log::info('ODS salva com sucesso.');
+
+            $this->resetForm();
+            $this->dispatch('ods-saved'); // Fecha o modal via Alpine
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Erro ao salvar ODS: ' . $e->getMessage());
+            session()->flash('error', 'Erro técnico: ' . $e->getMessage());
+        }
+    }
+
+    public function edit($id)
+    {
+        $ods = ServiceOrder::findOrFail($id);
+        $this->odsId = $ods->id;
+        $this->title = $ods->title;
+        $this->location = $ods->location;
+        $this->categoryId = $ods->category_id;
+        $this->dueDate = $ods->due_date;
+        $this->isUrgent = (bool)$ods->is_urgent;
+        $this->observation = $ods->observation;
+        $this->dispatch('open-ods-modal', mode: 'edit');
     }
 
     public function resetForm()
     {
-        $this->reset(['odsId', 'title', 'location', 'categoryId', 'dueDate', 'isUrgent', 'observation', 'checklist']);
+        $this->reset(['odsId', 'title', 'location', 'categoryId', 'dueDate', 'isUrgent', 'observation']);
+        $this->resetValidation();
     }
 
     public function render()
     {
-        // Aqui você buscará do banco. Mockado para renderizar o design inicial:
-        $serviceOrders = [
-            (object)['id' => '001', 'code' => 'ODS-001', 'title' => 'Troca de Lâmpada', 'location' => 'Av. Bernardo Sayão', 'category' => 'Iluminação', 'date' => '25/11/2025', 'urgent' => true, 'status' => 'pending', 'color' => 'red'],
-            (object)['id' => '045', 'code' => 'ODS-045', 'title' => 'Roçagem Praça', 'location' => 'Praça da Bíblia', 'category' => 'Limpeza', 'date' => '20/11/2025', 'urgent' => false, 'status' => 'in_progress', 'color' => 'blue'],
-            (object)['id' => '010', 'code' => 'ODS-010', 'title' => 'Troca Relé', 'location' => 'Av. Brasil', 'category' => 'Iluminação', 'date' => '10/11/2025', 'urgent' => false, 'status' => 'completed', 'color' => 'emerald'],
-        ];
-
         return view('livewire.secretariat.service-order-manager', [
-            'serviceOrders' => $serviceOrders
-        ]);
+            'serviceOrders' => $this->secretariat->serviceOrders()
+                ->with('category')
+                ->where('title', 'iLike', "%{$this->search}%") // Use iLike para PostgreSQL (comum no Docker do Laravel)
+                ->orderBy('is_urgent', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->get(),
+            'categories' => $this->secretariat->categories
+        ])->layout('layouts.app');
     }
 }
