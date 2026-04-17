@@ -2,13 +2,18 @@
 
 namespace App\Models;
 
+use App\Domain\ServiceOrders\Exceptions\InvalidServiceOrderStatusTransition;
+use App\Domain\ServiceOrders\ServiceOrderStatus;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Str;
 
 class ServiceOrder extends Model
 {
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'code',
@@ -22,6 +27,37 @@ class ServiceOrder extends Model
         'category_id'
     ];
 
+    protected static function booted(): void
+    {
+        static::creating(function (self $serviceOrder): void {
+            if (blank($serviceOrder->code)) {
+                $serviceOrder->code = self::temporaryCode();
+            }
+
+            if (blank($serviceOrder->status)) {
+                $serviceOrder->status = ServiceOrderStatus::Pending;
+            }
+        });
+
+        static::created(function (self $serviceOrder): void {
+            $permanentCode = self::codeFromId($serviceOrder->id);
+
+            if ($serviceOrder->code !== $permanentCode) {
+                $serviceOrder->forceFill(['code' => $permanentCode])->saveQuietly();
+                $serviceOrder->code = $permanentCode;
+            }
+        });
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'due_date' => 'date',
+            'is_urgent' => 'boolean',
+            'status' => ServiceOrderStatus::class,
+        ];
+    }
+
     public function secretariat(): BelongsTo
     {
         return $this->belongsTo(Secretariat::class);
@@ -31,12 +67,45 @@ class ServiceOrder extends Model
         return $this->belongsTo(Category::class);
     }
 
-    /**
-     * Gera o código sequencial ODS-001, ODS-002...
-     */
-    public static function generateCode(): string
+    public function scopeForSecretariat(Builder $query, int $secretariatId): Builder
     {
-        $lastId = self::withTrashed()->max('id') ?? 0;
-        return 'ODS-' . str_pad($lastId + 1, 3, '0', STR_PAD_LEFT);
+        return $query->where('secretariat_id', $secretariatId);
+    }
+
+    public function scopeSearch(Builder $query, string $search): Builder
+    {
+        $term = mb_strtolower(trim($search));
+
+        if ($term === '') {
+            return $query;
+        }
+
+        return $query->where(function (Builder $query) use ($term): void {
+            $like = "%{$term}%";
+
+            $query->whereRaw('LOWER(code) LIKE ?', [$like])
+                ->orWhereRaw('LOWER(title) LIKE ?', [$like])
+                ->orWhereRaw('LOWER(location) LIKE ?', [$like]);
+        });
+    }
+
+    public static function codeFromId(int $id): string
+    {
+        return 'ODS-'.str_pad((string) $id, 6, '0', STR_PAD_LEFT);
+    }
+
+    public function changeStatus(ServiceOrderStatus $status): void
+    {
+        if (! $this->status->canTransitionTo($status)) {
+            throw new InvalidServiceOrderStatusTransition($this->status, $status);
+        }
+
+        $this->forceFill(['status' => $status])->saveQuietly();
+        $this->status = $status;
+    }
+
+    private static function temporaryCode(): string
+    {
+        return 'TMP-'.Str::upper((string) Str::ulid());
     }
 }

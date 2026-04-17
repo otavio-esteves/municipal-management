@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Models\Category;
+use App\Models\Secretariat;
 use App\Livewire\Admin\SecretariatManager;
 use App\Livewire\Admin\CategoryManager;
 use App\Livewire\Secretariat\ServiceOrderManager;
@@ -20,9 +22,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('profile', 'profile')->name('profile');
 
     // Rotas Administrativas - Fase 2
-    Route::get('/admin/secretarias', SecretariatManager::class)->name('admin.secretariats');
-    Route::get('/admin/categorias', CategoryManager::class)->name('admin.categories');
-    Route::get('/secretarias/{secretariat}/ods', ServiceOrderManager::class)->name('secretariats.ods');
+    Route::get('/admin/secretarias', SecretariatManager::class)
+        ->can('viewAny', Secretariat::class)
+        ->name('admin.secretariats');
+    Route::get('/admin/categorias', CategoryManager::class)
+        ->can('viewAny', Category::class)
+        ->name('admin.categories');
+    Route::get('/secretarias/{secretariat}/ods', ServiceOrderManager::class)
+        ->can('view', 'secretariat')
+        ->name('secretariats.ods');
 });
 
 require __DIR__.'/auth.php';

@@ -2,14 +2,25 @@
 
 namespace App\Livewire\Secretariat;
 
-use Livewire\Component;
+use App\Application\ServiceOrders\CreateServiceOrder;
+use App\Application\ServiceOrders\Data\ServiceOrderData;
+use App\Application\ServiceOrders\Data\ServiceOrderListResult;
+use App\Application\ServiceOrders\GetServiceOrder;
+use App\Application\ServiceOrders\ListServiceOrders;
+use App\Application\ServiceOrders\UpdateServiceOrder;
+use App\Domain\ServiceOrders\Exceptions\InvalidServiceOrderCategory;
+use App\Domain\ServiceOrders\Exceptions\ServiceOrderNotFound;
 use App\Models\Secretariat;
 use App\Models\ServiceOrder;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Log;
+use Livewire\Component;
+use Livewire\WithPagination;
 
 class ServiceOrderManager extends Component
 {
+    use AuthorizesRequests, WithPagination;
+
     public Secretariat $secretariat;
     public $search = '';
 
@@ -24,58 +35,61 @@ class ServiceOrderManager extends Component
 
     public function mount(Secretariat $secretariat)
     {
+        $this->authorize('view', $secretariat);
         $this->secretariat = $secretariat;
+    }
+
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
     }
 
     public function save()
     {
-        // 1. Log para saber se o clique chegou no servidor (Verifique seu terminal!)
         Log::info('Tentando salvar ODS...', ['title' => $this->title, 'cat' => $this->categoryId]);
 
         $this->validate([
             'title' => 'required|min:3',
-            'categoryId' => 'required',
+            'categoryId' => 'required|integer',
         ]);
 
         try {
-            DB::beginTransaction();
-
-            $data = [
-                'title' => $this->title,
-                'location' => $this->location,
-                'category_id' => $this->categoryId,
-                'due_date' => $this->dueDate ?: null,
-                'is_urgent' => (bool)$this->isUrgent,
-                'observation' => $this->observation,
-                'secretariat_id' => $this->secretariat->id,
-                'status' => 'pending',
-            ];
+            $data = $this->serviceOrderData();
 
             if ($this->odsId) {
-                ServiceOrder::findOrFail($this->odsId)->update($data);
+                $serviceOrder = app(GetServiceOrder::class)->handle($this->secretariat->id, (int) $this->odsId);
+                $this->authorize('update', $serviceOrder);
+                app(UpdateServiceOrder::class)->handle($this->secretariat->id, (int) $this->odsId, $data);
                 session()->flash('success', 'Ordem atualizada com sucesso!');
             } else {
-                $data['code'] = ServiceOrder::generateCode();
-                ServiceOrder::create($data);
+                $this->authorize('create', [ServiceOrder::class, $this->secretariat]);
+                app(CreateServiceOrder::class)->handle($this->secretariat->id, $data);
                 session()->flash('success', 'Ordem criada com sucesso!');
             }
 
-            DB::commit();
             Log::info('ODS salva com sucesso.');
 
             $this->resetForm();
             $this->dispatch('ods-saved'); // Fecha o modal via Alpine
 
-        } catch (\Exception $e) {
-            DB::rollBack();
+        } catch (InvalidServiceOrderCategory|ServiceOrderNotFound $e) {
+            session()->flash('error', $e->getMessage());
+        } catch (\Throwable $e) {
             Log::error('Erro ao salvar ODS: ' . $e->getMessage());
-            session()->flash('error', 'Erro técnico: ' . $e->getMessage());
+            session()->flash('error', 'Nao foi possivel salvar a ordem de servico agora. Tente novamente.');
         }
     }
 
     public function edit($id)
     {
-        $ods = ServiceOrder::findOrFail($id);
+        try {
+            $ods = app(GetServiceOrder::class)->handle($this->secretariat->id, (int) $id);
+            $this->authorize('view', $ods);
+        } catch (ServiceOrderNotFound $e) {
+            session()->flash('error', $e->getMessage());
+            return;
+        }
+
         $this->odsId = $ods->id;
         $this->title = $ods->title;
         $this->location = $ods->location;
@@ -94,14 +108,26 @@ class ServiceOrderManager extends Component
 
     public function render()
     {
+        $this->authorize('viewAny', [ServiceOrder::class, $this->secretariat]);
+        /** @var ServiceOrderListResult $listing */
+        $listing = app(ListServiceOrders::class)->handle($this->secretariat->id, $this->search, 15);
+
         return view('livewire.secretariat.service-order-manager', [
-            'serviceOrders' => $this->secretariat->serviceOrders()
-                ->with('category')
-                ->where('title', 'iLike', "%{$this->search}%") // Use iLike para PostgreSQL (comum no Docker do Laravel)
-                ->orderBy('is_urgent', 'desc')
-                ->orderBy('created_at', 'desc')
-                ->get(),
+            'serviceOrders' => $listing->serviceOrders,
+            'summary' => $listing->summary,
             'categories' => $this->secretariat->categories
         ])->layout('layouts.app');
+    }
+
+    private function serviceOrderData(): ServiceOrderData
+    {
+        return ServiceOrderData::fromArray([
+            'title' => $this->title,
+            'location' => $this->location,
+            'category_id' => $this->categoryId,
+            'due_date' => $this->dueDate,
+            'is_urgent' => (bool) $this->isUrgent,
+            'observation' => $this->observation,
+        ]);
     }
 }

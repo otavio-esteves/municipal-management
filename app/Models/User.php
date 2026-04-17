@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -21,6 +22,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
+        'secretariat_id',
     ];
 
     /**
@@ -46,8 +48,18 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
-    public function secretariat()
+    public function secretariat(): BelongsTo
     {
         return $this->belongsTo(Secretariat::class);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->secretariat_id === null;
+    }
+
+    public function belongsToSecretariat(int $secretariatId): bool
+    {
+        return $this->secretariat_id === $secretariatId;
     }
 }

@@ -1,59 +1,201 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Municipal Management
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplicação Laravel 12 + Livewire 3 para gestão municipal de secretarias, categorias e ordens de serviço.
 
-## About Laravel
+## Stack e requisitos
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- PHP `^8.2`
+- Laravel `^12.0`
+- Livewire `^3.6`
+- Volt `^1.7`
+- Node.js para build frontend com Vite
+- Banco compatível com Laravel 12
+- Docker + Sail para ambiente local recomendado
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Observação:
+- O projeto hoje é desenvolvido e testado preferencialmente com `Sail`.
+- Alguns documentos antigos em `docs/` mencionam PHP 8.4. O requisito real do código atual está em [composer.json](/home/esteves/Projects/laravel-server/html/composer.json:1): PHP `^8.2`.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Como executar
 
-## Learning Laravel
+### Com Sail
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+```bash
+cp .env.example .env
+./vendor/bin/sail up -d
+./vendor/bin/sail composer install
+./vendor/bin/sail php artisan key:generate
+./vendor/bin/sail php artisan migrate
+./vendor/bin/sail npm install
+./vendor/bin/sail npm run dev
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Sem Sail
 
-## Laravel Sponsors
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+npm install
+npm run dev
+php artisan serve
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Comandos principais
 
-### Premium Partners
+```bash
+./vendor/bin/sail php artisan test
+./vendor/bin/sail php artisan route:list
+./vendor/bin/sail php artisan migrate
+./vendor/bin/sail composer dump-autoload
+./vendor/bin/sail npm run dev
+./vendor/bin/sail npm run build
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+Atalhos definidos em `composer.json`:
 
-## Contributing
+```bash
+composer setup
+composer dev
+composer test
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Fluxo da aplicação
 
-## Code of Conduct
+### Perfis de acesso
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+- `admin`: usuário com `secretariat_id = null`
+- `usuário de secretaria`: usuário vinculado a uma `secretariat`
 
-## Security Vulnerabilities
+### Fluxo principal
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+1. Usuário autenticado e com e-mail verificado acessa o sistema.
+2. Se estiver vinculado a uma secretaria, o login e o dashboard o direcionam para `/secretarias/{secretariat}/ods`.
+3. Admin acessa áreas administrativas para gerir secretarias e categorias.
+4. Usuário de secretaria opera apenas as ordens de serviço da própria secretaria.
 
-## License
+## Regras de autorização
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+As regras estão explícitas em `Policies` e não dependem apenas de navegação ou redirecionamento.
+
+- `SecretariatPolicy`
+  - admin pode listar, criar, editar e excluir secretarias
+  - usuário de secretaria só pode visualizar a própria secretaria quando necessário
+- `CategoryPolicy`
+  - gestão administrativa restrita a admin
+- `ServiceOrderPolicy`
+  - admin pode acessar qualquer painel de ODS e manipular qualquer ordem
+  - usuário de secretaria só acessa e manipula ODS da própria secretaria
+
+Pontos de enforcement:
+
+- rotas em [routes/web.php](/home/esteves/Projects/laravel-server/html/routes/web.php:1)
+- componentes Livewire administrativos e de ODS
+- casos de uso de `ServiceOrder`, que validam coerência de secretaria/categoria
+
+## Fluxo de ServiceOrder
+
+O fluxo de ODS foi separado em camada de aplicação e domínio.
+
+### Criação
+
+- entrada capturada no Livewire
+- transformação para `ServiceOrderData`
+- execução de `CreateServiceOrder`
+- validação de categoria pertencente à mesma secretaria
+- persistência com código final gerado a partir do `id`
+- status inicial definido no domínio como `pending`
+
+### Edição
+
+- carregamento por secretaria com `GetServiceOrder`
+- atualização por `UpdateServiceOrder`
+- edição comum não reseta `status`
+
+### Listagem
+
+- listagem via `ListServiceOrders`
+- busca por `code`, `title` e `location`
+- paginação
+- resumo agregado para total, urgentes e concluídas
+
+### Status
+
+- `status` usa enum de domínio: `pending`, `in_progress`, `completed`
+- transições ficam no modelo `ServiceOrder`
+
+## Estrutura de pastas adotada
+
+```text
+app/
+  Application/
+    Categories/
+    Secretariats/
+    ServiceOrders/
+  Domain/
+    ServiceOrders/
+  Livewire/
+    Admin/
+    Secretariat/
+    Forms/
+  Models/
+  Policies/
+  Providers/
+
+database/
+  factories/
+  migrations/
+  seeders/
+
+resources/
+  views/
+    livewire/
+    layouts/
+
+tests/
+  Feature/
+    Authorization/
+    Listings/
+    ServiceOrders/
+```
+
+## Convenções para futuras features
+
+- regras de domínio ficam em `app/Domain`
+- casos de uso ficam em `app/Application`
+- componentes Livewire devem ser finos:
+  - capturam input
+  - autorizam
+  - chamam casos de uso
+  - lidam com mensagens e renderização
+- consultas reutilizáveis ficam em:
+  - scopes de model quando forem simples
+  - classes de aplicação quando envolverem listagem/filtro com mais contexto
+- autorização nova deve nascer com `Policy` ou `Gate`
+- comportamento crítico deve vir acompanhado de testes de feature ou integração
+
+## Testes
+
+A suíte atual cobre principalmente:
+
+- autorização entre admin e secretaria
+- isolamento de ODS por secretaria
+- validação de categoria por secretaria
+- domínio de `ServiceOrder`:
+  - geração de código
+  - preservação de status
+  - transições de status
+- listagens com filtro e paginação
+
+Para rodar:
+
+```bash
+./vendor/bin/sail php artisan test
+```
+
+## Documentação adicional
+
+- [Arquitetura](./docs/architecture.md)
+- [Plano original](./docs/municipal-management-code-plan.md)
+- [Requisitos originais](./docs/municipal-management-requirements.md)

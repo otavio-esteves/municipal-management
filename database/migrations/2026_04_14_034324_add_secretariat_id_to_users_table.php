@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-        // RNF03 - Integridade de Dados
-        $table->foreignId('secretariat_id')->nullable()->constrained('secretariats')->nullOnDelete();
-    });
+            // RNF03 - Integridade de Dados
+            $table->foreignId('secretariat_id')->nullable()->constrained('secretariats')->nullOnDelete();
+        });
     }
 
     /**
@@ -23,7 +23,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            //
+            $table->dropConstrainedForeignId('secretariat_id');
         });
     }
 };

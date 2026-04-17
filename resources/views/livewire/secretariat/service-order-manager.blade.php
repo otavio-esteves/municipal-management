@@ -7,6 +7,7 @@
      x-on:open-ods-modal.window="modalOpen = true; modalView = 'details'; mode = $event.detail.mode"
      x-on:ods-saved.window="modalOpen = false">
 
+    {{-- TODO técnico: mover Phosphor Icons para asset local via Vite quando o pacote for incorporado ao build. --}}
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
     <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 py-4 flex flex-col md:flex-row items-center justify-between z-20 shrink-0 gap-3 transition-colors duration-200">
@@ -24,15 +25,15 @@
         <div class="h-8 flex items-center bg-slate-50 dark:bg-slate-800 rounded-md px-1 border border-slate-200 dark:border-slate-700 shadow-inner overflow-x-auto max-w-full">
             <div class="flex items-center px-2.5 h-full gap-1.5 border-r border-slate-200 dark:border-slate-700 whitespace-nowrap">
                 <i class="ph ph-files text-slate-400 text-sm"></i>
-                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Total <span class="font-bold">{{ $serviceOrders->count() }}</span></span>
+                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Total <span class="font-bold">{{ $summary['total'] }}</span></span>
             </div>
             <div class="flex items-center px-2.5 h-full gap-1.5 border-r border-slate-200 dark:border-slate-700 whitespace-nowrap">
                 <div class="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]"></div>
-                <span class="text-xs font-medium text-red-600 dark:text-red-400">Urgentes <span class="font-bold">{{ $serviceOrders->where('is_urgent', true)->count() }}</span></span>
+                <span class="text-xs font-medium text-red-600 dark:text-red-400">Urgentes <span class="font-bold">{{ $summary['urgent'] }}</span></span>
             </div>
             <div class="flex items-center px-2.5 h-full gap-1.5 whitespace-nowrap">
                 <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]"></div>
-                <span class="text-xs font-medium text-emerald-600 dark:text-emerald-400">Concluídas <span class="font-bold">{{ $serviceOrders->where('status', 'completed')->count() }}</span></span>
+                <span class="text-xs font-medium text-emerald-600 dark:text-emerald-400">Concluídas <span class="font-bold">{{ $summary['completed'] }}</span></span>
             </div>
         </div>
 
@@ -62,10 +63,28 @@
     <main class="flex-1 overflow-y-auto p-6 pb-32 custom-scrollbar">
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             @forelse($serviceOrders as $ods)
+                @php
+                    $status = $ods->status;
+                    $topBorderClass = match ($status) {
+                        \App\Domain\ServiceOrders\ServiceOrderStatus::Completed => 'bg-emerald-500',
+                        \App\Domain\ServiceOrders\ServiceOrderStatus::InProgress => 'bg-blue-500',
+                        default => 'bg-blue-500',
+                    };
+                    $badgeClass = match ($status) {
+                        \App\Domain\ServiceOrders\ServiceOrderStatus::Completed => 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50',
+                        \App\Domain\ServiceOrders\ServiceOrderStatus::InProgress => 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50',
+                        default => 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-900/50',
+                    };
+                    $statusIcon = match ($status) {
+                        \App\Domain\ServiceOrders\ServiceOrderStatus::Completed => 'ph-check-circle',
+                        \App\Domain\ServiceOrders\ServiceOrderStatus::InProgress => 'ph-spinner animate-spin-slow',
+                        default => 'ph-clock',
+                    };
+                @endphp
                 <div x-on:click="$wire.edit({{ $ods->id }}); modalView = 'details'; mode = 'edit'; modalOpen = true"
                     class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 relative overflow-hidden group hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
                     
-                    <div class="h-1.5 w-full absolute top-0 {{ $ods->is_urgent ? 'bg-red-500' : ($ods->status === 'completed' ? 'bg-emerald-500' : 'bg-blue-500') }}"></div>
+                    <div class="h-1.5 w-full absolute top-0 {{ $ods->is_urgent ? 'bg-red-500' : $topBorderClass }}"></div>
                     
                     <div class="p-5">
                         <div class="flex justify-between items-start mb-3">
@@ -90,12 +109,9 @@
                                 <i class="ph ph-list-checks text-lg"></i>
                             </button>
 
-                            <span class="text-[10px] font-bold px-2.5 py-1.5 rounded-full flex items-center gap-1.5 transition-colors
-                                {{ $ods->status === 'completed' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50' : 
-                                   ($ods->status === 'in_progress' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50' : 
-                                   'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-900/50') }}">
-                                <i class="ph {{ $ods->status === 'completed' ? 'ph-check-circle' : ($ods->status === 'in_progress' ? 'ph-spinner animate-spin-slow' : 'ph-clock') }}"></i>
-                                {{ $ods->status === 'completed' ? 'Concluída' : ($ods->status === 'in_progress' ? 'Em And.' : 'Pendente') }}
+                            <span class="text-[10px] font-bold px-2.5 py-1.5 rounded-full flex items-center gap-1.5 transition-colors {{ $badgeClass }}">
+                                <i class="ph {{ $statusIcon }}"></i>
+                                {{ $status->label() }}
                             </span>
                         </div>
                     </div>
@@ -107,6 +123,12 @@
                 </div>
             @endforelse
         </div>
+
+        @if ($serviceOrders->hasPages())
+            <div class="mt-6">
+                {{ $serviceOrders->links() }}
+            </div>
+        @endif
     </main>
 
     <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm transition-all duration-300"

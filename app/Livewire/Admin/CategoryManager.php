@@ -2,15 +2,17 @@
 
 namespace App\Livewire\Admin;
 
+use App\Application\Categories\ListCategories;
 use App\Models\Category;
 use App\Models\Secretariat;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Illuminate\Support\Str;
 
 class CategoryManager extends Component
 {
-    use WithPagination;
+    use AuthorizesRequests, WithPagination;
 
     public $search = '';
     public $name, $description, $secretariat_id, $selected_id;
@@ -25,19 +27,29 @@ class CategoryManager extends Component
         ];
     }
 
+    public function mount(): void
+    {
+        $this->authorize('viewAny', Category::class);
+    }
+
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
     public function render()
     {
+        $this->authorize('viewAny', Category::class);
+
         return view('livewire.admin.category-manager', [
-            'categories' => Category::with('secretariat') // Eager Loading para performance
-                ->where('name', 'like', '%' . $this->search . '%')
-                ->latest()
-                ->paginate(10),
+            'categories' => app(ListCategories::class)->handle($this->search, 10),
             'secretariats' => Secretariat::orderBy('name')->get() // Para o dropdown no formulário
         ])->layout('layouts.app');
     }
 
     public function create()
     {
+        $this->authorize('create', Category::class);
         $this->resetInputFields();
         $this->openModal();
     }
@@ -63,6 +75,13 @@ class CategoryManager extends Component
 
     public function store()
     {
+        if ($this->selected_id) {
+            $existingCategory = Category::findOrFail($this->selected_id);
+            $this->authorize('update', $existingCategory);
+        } else {
+            $this->authorize('create', Category::class);
+        }
+
         $this->validate();
 
         $slug = Str::slug($this->name);
@@ -92,6 +111,7 @@ class CategoryManager extends Component
     public function edit($id)
     {
         $record = Category::findOrFail($id);
+        $this->authorize('update', $record);
         $this->selected_id = $id;
         $this->name = $record->name;
         $this->secretariat_id = $record->secretariat_id;
@@ -101,7 +121,9 @@ class CategoryManager extends Component
 
     public function delete($id)
     {
-        Category::find($id)->delete(); // Aplica Soft Delete conforme o Model
+        $record = Category::findOrFail($id);
+        $this->authorize('delete', $record);
+        $record->delete(); // Aplica Soft Delete conforme o Model
         session()->flash('message', 'Categoria movida para a lixeira.');
     }
 }

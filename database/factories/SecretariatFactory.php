@@ -2,30 +2,23 @@
 
 namespace Database\Factories;
 
-use App\Models\Category;
 use App\Models\Secretariat;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
 /**
- * @extends Factory<Category>
+ * @extends Factory<Secretariat>
  */
-class CategoryFactory extends Factory
+class SecretariatFactory extends Factory
 {
-    protected $model = Category::class;
+    protected $model = Secretariat::class;
 
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
-        $name = fake()->unique()->word();
+        $name = fake()->unique()->company();
 
         return [
-            'secretariat_id' => Secretariat::factory(),
-            'name' => ucfirst($name),
+            'name' => $name,
             'slug' => Str::slug($name).'-'.fake()->unique()->numberBetween(1, 9999),
             'description' => fake()->sentence(),
         ];
