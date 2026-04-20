@@ -2,16 +2,17 @@
 
 namespace App\Application\Secretariats;
 
-use App\Models\Secretariat;
+use App\Application\Secretariats\Contracts\SecretariatRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class ListSecretariats
 {
+    public function __construct(
+        private readonly SecretariatRepository $secretariats,
+    ) {}
+
     public function handle(string $search = '', int $perPage = 10): LengthAwarePaginator
     {
-        return Secretariat::query()
-            ->search($search)
-            ->withCount('categories')
-            ->paginate($perPage);
+        return $this->secretariats->paginate($search, $perPage);
     }
 }

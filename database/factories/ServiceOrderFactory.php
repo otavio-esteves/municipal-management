@@ -42,4 +42,26 @@ class ServiceOrderFactory extends Factory
             ]),
         ]);
     }
+
+    public function forCategory(Category $category): static
+    {
+        return $this->state(fn () => [
+            'secretariat_id' => $category->secretariat_id,
+            'category_id' => $category->id,
+        ]);
+    }
+
+    public function urgent(): static
+    {
+        return $this->state(fn () => [
+            'is_urgent' => true,
+        ]);
+    }
+
+    public function withStatus(ServiceOrderStatus $status): static
+    {
+        return $this->state(fn () => [
+            'status' => $status,
+        ]);
+    }
 }

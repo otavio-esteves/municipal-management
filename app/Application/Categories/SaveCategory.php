@@ -1,0 +1,29 @@
+<?php
+
+namespace App\Application\Categories;
+
+use App\Application\Categories\Contracts\CategoryRepository;
+use App\Application\Categories\Data\CategoryMutationData;
+use App\Domain\Categories\Exceptions\CategorySlugAlreadyExists;
+use App\Models\Category;
+use Illuminate\Support\Str;
+
+class SaveCategory
+{
+    public function __construct(
+        private readonly CategoryRepository $categories,
+        private readonly GetCategory $getCategory,
+    ) {}
+
+    public function handle(?int $categoryId, CategoryMutationData $data): Category
+    {
+        $category = $categoryId === null ? null : $this->getCategory->handle($categoryId);
+        $slug = Str::slug($data->name);
+
+        if ($this->categories->slugExistsForSecretariat($data->secretariatId, $slug, $category?->id)) {
+            throw new CategorySlugAlreadyExists;
+        }
+
+        return $this->categories->save($category, $data, $slug);
+    }
+}

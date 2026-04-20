@@ -6,8 +6,8 @@ use App\Application\Categories\ListCategories;
 use App\Application\Secretariats\ListSecretariats;
 use App\Models\Category;
 use App\Models\Secretariat;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Database\Eloquent\Factories\Sequence;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class AdminListingTest extends TestCase

@@ -1,5 +1,6 @@
 <?php
 
+use App\Application\Auth\ResolveUserHomeRoute;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +19,7 @@ new #[Layout('layouts.guest')] class extends Component
     /**
      * Handle an incoming registration request.
      */
-    public function register(): void
+    public function register(ResolveUserHomeRoute $resolveUserHomeRoute): void
     {
         $validated = $this->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -32,7 +33,9 @@ new #[Layout('layouts.guest')] class extends Component
 
         Auth::login($user);
 
-        $this->redirect(route('dashboard', absolute: false), navigate: true);
+        $target = $resolveUserHomeRoute->handle($user);
+
+        $this->redirect($target->toUrl(), navigate: true);
     }
 }; ?>
 

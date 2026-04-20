@@ -2,6 +2,12 @@
 
 namespace App\Providers;
 
+use App\Application\Categories\Contracts\CategoryRepository;
+use App\Application\Secretariats\Contracts\SecretariatRepository;
+use App\Application\ServiceOrders\Contracts\ServiceOrderRepository;
+use App\Infrastructure\Persistence\Eloquent\EloquentCategoryRepository;
+use App\Infrastructure\Persistence\Eloquent\EloquentSecretariatRepository;
+use App\Infrastructure\Persistence\Eloquent\EloquentServiceOrderRepository;
 use App\Models\Category;
 use App\Models\Secretariat;
 use App\Models\ServiceOrder;
@@ -18,7 +24,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(CategoryRepository::class, EloquentCategoryRepository::class);
+        $this->app->bind(SecretariatRepository::class, EloquentSecretariatRepository::class);
+        $this->app->bind(ServiceOrderRepository::class, EloquentServiceOrderRepository::class);
     }
 
     /**

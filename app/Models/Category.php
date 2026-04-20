@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Category extends Model
 {
@@ -15,15 +16,12 @@ class Category extends Model
 
     protected $fillable = ['secretariat_id', 'name', 'slug', 'description'];
 
-    /**
-     * Relacionamento N:1 com Secretaria
-     */
     public function secretariat(): BelongsTo
     {
         return $this->belongsTo(Secretariat::class);
     }
 
-    public function serviceOrders(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function serviceOrders(): HasMany
     {
         return $this->hasMany(ServiceOrder::class);
     }

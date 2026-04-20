@@ -4,11 +4,12 @@ namespace App\Models;
 
 use App\Domain\ServiceOrders\Exceptions\InvalidServiceOrderStatusTransition;
 use App\Domain\ServiceOrders\ServiceOrderStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class ServiceOrder extends Model
@@ -24,7 +25,7 @@ class ServiceOrder extends Model
         'is_urgent',
         'status',
         'secretariat_id',
-        'category_id'
+        'category_id',
     ];
 
     protected static function booted(): void
@@ -62,9 +63,15 @@ class ServiceOrder extends Model
     {
         return $this->belongsTo(Secretariat::class);
     }
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function checklistItems(): HasMany
+    {
+        return $this->hasMany(OdsChecklist::class)->orderBy('sort_order')->orderBy('id');
     }
 
     public function scopeForSecretariat(Builder $query, int $secretariatId): Builder

@@ -1,5 +1,6 @@
 <?php
 
+use App\Application\Auth\ResolveUserHomeRoute;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
@@ -12,7 +13,7 @@ new #[Layout('layouts.guest')] class extends Component
     /**
      * Confirm the current user's password.
      */
-    public function confirmPassword(): void
+    public function confirmPassword(ResolveUserHomeRoute $resolveUserHomeRoute): void
     {
         $this->validate([
             'password' => ['required', 'string'],
@@ -29,7 +30,7 @@ new #[Layout('layouts.guest')] class extends Component
 
         session(['auth.password_confirmed_at' => time()]);
 
-        $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
+        $this->redirectIntended(default: $resolveUserHomeRoute->handle(Auth::user())->toUrl(), navigate: true);
     }
 }; ?>
 

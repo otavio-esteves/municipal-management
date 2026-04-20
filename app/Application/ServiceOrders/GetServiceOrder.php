@@ -2,20 +2,22 @@
 
 namespace App\Application\ServiceOrders;
 
+use App\Application\ServiceOrders\Contracts\ServiceOrderRepository;
 use App\Domain\ServiceOrders\Exceptions\ServiceOrderNotFound;
 use App\Models\ServiceOrder;
 
 class GetServiceOrder
 {
+    public function __construct(
+        private readonly ServiceOrderRepository $serviceOrders,
+    ) {}
+
     public function handle(int $secretariatId, int $serviceOrderId): ServiceOrder
     {
-        $serviceOrder = ServiceOrder::query()
-            ->whereKey($serviceOrderId)
-            ->where('secretariat_id', $secretariatId)
-            ->first();
+        $serviceOrder = $this->serviceOrders->findByIdForSecretariat($secretariatId, $serviceOrderId);
 
         if (! $serviceOrder) {
-            throw new ServiceOrderNotFound();
+            throw new ServiceOrderNotFound;
         }
 
         return $serviceOrder;

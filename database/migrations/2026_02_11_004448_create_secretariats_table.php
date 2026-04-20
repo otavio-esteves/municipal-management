@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-    Schema::create('secretariats', function (Blueprint $table) {
-        $table->id();
-        $table->string('name')->unique();
-        $table->string('slug')->unique(); // Útil para URLs amigáveis
-        $table->text('description')->nullable();
-        $table->softDeletes(); // Requisito RF07
-        $table->timestamps();
-    });
+        Schema::create('secretariats', function (Blueprint $table) {
+            $table->id();
+            $table->string('name')->unique();
+            $table->string('slug')->unique(); // Útil para URLs amigáveis
+            $table->text('description')->nullable();
+            $table->softDeletes(); // Requisito RF07
+            $table->timestamps();
+        });
     }
 
     /**

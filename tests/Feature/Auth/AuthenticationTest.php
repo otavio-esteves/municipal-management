@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\Secretariat;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Volt\Volt;
@@ -20,9 +21,9 @@ class AuthenticationTest extends TestCase
             ->assertSeeVolt('pages.auth.login');
     }
 
-    public function test_users_can_authenticate_using_the_login_screen(): void
+    public function test_admin_users_are_redirected_to_dashboard_after_login(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->admin()->create();
 
         $component = Volt::test('pages.auth.login')
             ->set('form.email', $user->email)
@@ -33,6 +34,24 @@ class AuthenticationTest extends TestCase
         $component
             ->assertHasNoErrors()
             ->assertRedirect(route('dashboard', absolute: false));
+
+        $this->assertAuthenticated();
+    }
+
+    public function test_secretariat_users_are_redirected_to_their_own_dashboard_after_login(): void
+    {
+        $secretariat = Secretariat::factory()->create();
+        $user = User::factory()->forSecretariat($secretariat)->create();
+
+        $component = Volt::test('pages.auth.login')
+            ->set('form.email', $user->email)
+            ->set('form.password', 'password');
+
+        $component->call('login');
+
+        $component
+            ->assertHasNoErrors()
+            ->assertRedirect(route('secretariats.ods', ['secretariat' => $secretariat->id], absolute: false));
 
         $this->assertAuthenticated();
     }
@@ -54,9 +73,9 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_navigation_menu_can_be_rendered(): void
+    public function test_dashboard_route_renders_for_admin_users(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->admin()->create();
 
         $this->actingAs($user);
 
@@ -65,6 +84,16 @@ class AuthenticationTest extends TestCase
         $response
             ->assertOk()
             ->assertSeeVolt('layout.navigation');
+    }
+
+    public function test_dashboard_route_redirects_secretariat_users_to_their_own_service_order_panel(): void
+    {
+        $secretariat = Secretariat::factory()->create();
+        $user = User::factory()->forSecretariat($secretariat)->create();
+
+        $this->actingAs($user)
+            ->get('/dashboard')
+            ->assertRedirect(route('secretariats.ods', ['secretariat' => $secretariat->id]));
     }
 
     public function test_users_can_logout(): void

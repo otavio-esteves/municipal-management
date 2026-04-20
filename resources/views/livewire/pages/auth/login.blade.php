@@ -1,5 +1,6 @@
 <?php
 
+use App\Application\Auth\ResolveUserHomeRoute;
 use App\Livewire\Forms\LoginForm;
 use Illuminate\Support\Facades\Session;
 use Livewire\Attributes\Layout;
@@ -12,7 +13,7 @@ new #[Layout('layouts.guest')] class extends Component
     /**
      * Handle an incoming authentication request.
      */
-    public function login(): void
+    public function login(ResolveUserHomeRoute $resolveUserHomeRoute): void
     {
         $this->validate();
 
@@ -20,7 +21,11 @@ new #[Layout('layouts.guest')] class extends Component
 
         Session::regenerate();
 
-        $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        $target = $resolveUserHomeRoute->handle($user);
+
+        $this->redirectIntended(default: $target->toUrl(), navigate: true);
     }
 }; ?>
 

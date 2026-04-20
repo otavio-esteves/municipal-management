@@ -1,5 +1,6 @@
 <?php
 
+use App\Application\Auth\ResolveUserHomeRoute;
 use App\Livewire\Actions\Logout;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
@@ -11,10 +12,10 @@ new #[Layout('layouts.guest')] class extends Component
     /**
      * Send an email verification notification to the user.
      */
-    public function sendVerification(): void
+    public function sendVerification(ResolveUserHomeRoute $resolveUserHomeRoute): void
     {
         if (Auth::user()->hasVerifiedEmail()) {
-            $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
+            $this->redirectIntended(default: $resolveUserHomeRoute->handle(Auth::user())->toUrl(), navigate: true);
 
             return;
         }

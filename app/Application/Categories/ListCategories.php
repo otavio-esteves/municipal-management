@@ -2,17 +2,17 @@
 
 namespace App\Application\Categories;
 
-use App\Models\Category;
+use App\Application\Categories\Contracts\CategoryRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class ListCategories
 {
+    public function __construct(
+        private readonly CategoryRepository $categories,
+    ) {}
+
     public function handle(string $search = '', int $perPage = 10): LengthAwarePaginator
     {
-        return Category::query()
-            ->with('secretariat')
-            ->search($search)
-            ->latest()
-            ->paginate($perPage);
+        return $this->categories->paginate($search, $perPage);
     }
 }

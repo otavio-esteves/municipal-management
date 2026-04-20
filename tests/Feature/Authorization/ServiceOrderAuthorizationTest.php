@@ -28,6 +28,43 @@ class ServiceOrderAuthorizationTest extends TestCase
             ->assertSee('Ordem de servico nao encontrada para esta secretaria.');
     }
 
+    public function test_secretariat_user_can_edit_and_delete_own_service_order(): void
+    {
+        $secretariat = Secretariat::factory()->create();
+        $category = Category::factory()->create(['secretariat_id' => $secretariat->id]);
+        $user = User::factory()->create(['secretariat_id' => $secretariat->id]);
+        $serviceOrder = ServiceOrder::factory()->create([
+            'secretariat_id' => $secretariat->id,
+            'category_id' => $category->id,
+            'title' => 'ODS original',
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(ServiceOrderManager::class, ['secretariat' => $secretariat])
+            ->call('edit', $serviceOrder->id)
+            ->assertSet('odsId', $serviceOrder->id)
+            ->set('title', 'ODS atualizada')
+            ->set('categoryId', $category->id)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('service_orders', [
+            'id' => $serviceOrder->id,
+            'title' => 'ODS atualizada',
+            'secretariat_id' => $secretariat->id,
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(ServiceOrderManager::class, ['secretariat' => $secretariat])
+            ->call('delete', $serviceOrder->id)
+            ->assertHasNoErrors();
+
+        $this->assertSoftDeleted('service_orders', [
+            'id' => $serviceOrder->id,
+            'secretariat_id' => $secretariat->id,
+        ]);
+    }
+
     public function test_secretariat_user_cannot_create_service_order_with_category_from_other_secretariat(): void
     {
         $ownSecretariat = Secretariat::factory()->create();
@@ -73,11 +110,60 @@ class ServiceOrderAuthorizationTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_secretariat_user_cannot_delete_service_order_from_another_secretariat(): void
+    {
+        $ownSecretariat = Secretariat::factory()->create();
+        $otherSecretariat = Secretariat::factory()->create();
+        $user = User::factory()->create(['secretariat_id' => $ownSecretariat->id]);
+        $serviceOrder = ServiceOrder::factory()->forSecretariat($otherSecretariat)->create();
+
+        Livewire::actingAs($user)
+            ->test(ServiceOrderManager::class, ['secretariat' => $ownSecretariat])
+            ->call('delete', $serviceOrder->id)
+            ->assertSee('Ordem de servico nao encontrada para esta secretaria.');
+
+        $this->assertDatabaseHas('service_orders', [
+            'id' => $serviceOrder->id,
+            'secretariat_id' => $otherSecretariat->id,
+            'deleted_at' => null,
+        ]);
+    }
+
+    public function test_secretariat_user_cannot_update_service_order_from_another_secretariat_by_tampering_with_id(): void
+    {
+        $ownSecretariat = Secretariat::factory()->create();
+        $otherSecretariat = Secretariat::factory()->create();
+        $ownCategory = Category::factory()->create(['secretariat_id' => $ownSecretariat->id]);
+        $user = User::factory()->create(['secretariat_id' => $ownSecretariat->id]);
+        $serviceOrder = ServiceOrder::factory()->forSecretariat($otherSecretariat)->create([
+            'title' => 'ODS externa',
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(ServiceOrderManager::class, ['secretariat' => $ownSecretariat])
+            ->set('odsId', $serviceOrder->id)
+            ->set('title', 'Tentativa de invasao')
+            ->set('categoryId', $ownCategory->id)
+            ->call('save')
+            ->assertSee('Ordem de servico nao encontrada para esta secretaria.');
+
+        $this->assertDatabaseHas('service_orders', [
+            'id' => $serviceOrder->id,
+            'title' => 'ODS externa',
+            'secretariat_id' => $otherSecretariat->id,
+        ]);
+    }
+
     public function test_admin_can_manage_service_orders_for_any_secretariat(): void
     {
         $secretariat = Secretariat::factory()->create();
         $category = Category::factory()->create(['secretariat_id' => $secretariat->id]);
         $admin = User::factory()->create(['secretariat_id' => null]);
+        $serviceOrder = ServiceOrder::factory()->create([
+            'secretariat_id' => $secretariat->id,
+            'category_id' => $category->id,
+            'title' => 'ODS inicial',
+        ]);
 
         Livewire::actingAs($admin)
             ->test(ServiceOrderManager::class, ['secretariat' => $secretariat])
@@ -90,6 +176,29 @@ class ServiceOrderAuthorizationTest extends TestCase
             'title' => 'ODS do admin',
             'secretariat_id' => $secretariat->id,
             'category_id' => $category->id,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(ServiceOrderManager::class, ['secretariat' => $secretariat])
+            ->call('edit', $serviceOrder->id)
+            ->assertSet('odsId', $serviceOrder->id)
+            ->set('title', 'ODS editada pelo admin')
+            ->set('categoryId', $category->id)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('service_orders', [
+            'id' => $serviceOrder->id,
+            'title' => 'ODS editada pelo admin',
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(ServiceOrderManager::class, ['secretariat' => $secretariat])
+            ->call('delete', $serviceOrder->id)
+            ->assertHasNoErrors();
+
+        $this->assertSoftDeleted('service_orders', [
+            'id' => $serviceOrder->id,
         ]);
     }
 }

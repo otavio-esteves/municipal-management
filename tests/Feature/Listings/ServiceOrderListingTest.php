@@ -60,4 +60,33 @@ class ServiceOrderListingTest extends TestCase
         $this->assertCount(3, $listing->serviceOrders->items());
         $this->assertSame(2, $listing->serviceOrders->lastPage());
     }
+
+    public function test_service_order_listing_respects_secretariat_scope(): void
+    {
+        $secretariat = Secretariat::factory()->create();
+        $otherSecretariat = Secretariat::factory()->create();
+        $category = Category::factory()->create(['secretariat_id' => $secretariat->id]);
+        $otherCategory = Category::factory()->create(['secretariat_id' => $otherSecretariat->id]);
+
+        ServiceOrder::factory()->forSecretariat($secretariat)->count(2)->create([
+            'category_id' => $category->id,
+            'title' => 'ODS da secretaria correta',
+            'status' => ServiceOrderStatus::Pending,
+            'is_urgent' => false,
+        ]);
+
+        ServiceOrder::factory()->forSecretariat($otherSecretariat)->count(4)->create([
+            'category_id' => $otherCategory->id,
+            'title' => 'ODS de outra secretaria',
+            'is_urgent' => true,
+            'status' => ServiceOrderStatus::Completed,
+        ]);
+
+        $listing = app(ListServiceOrders::class)->handle($secretariat->id, '', 10);
+
+        $this->assertSame(2, $listing->summary['total']);
+        $this->assertSame(0, $listing->summary['urgent']);
+        $this->assertSame(0, $listing->summary['completed']);
+        $this->assertSame(2, $listing->serviceOrders->total());
+    }
 }

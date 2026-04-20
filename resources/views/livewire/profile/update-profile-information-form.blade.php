@@ -1,5 +1,6 @@
 <?php
 
+use App\Application\Auth\ResolveUserHomeRoute;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
@@ -46,12 +47,12 @@ new class extends Component
     /**
      * Send an email verification notification to the current user.
      */
-    public function sendVerification(): void
+    public function sendVerification(ResolveUserHomeRoute $resolveUserHomeRoute): void
     {
         $user = Auth::user();
 
         if ($user->hasVerifiedEmail()) {
-            $this->redirectIntended(default: route('dashboard', absolute: false));
+            $this->redirectIntended(default: $resolveUserHomeRoute->handle($user)->toUrl());
 
             return;
         }

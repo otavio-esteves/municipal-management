@@ -3,13 +3,16 @@
 namespace App\Livewire\Secretariat;
 
 use App\Application\ServiceOrders\CreateServiceOrder;
-use App\Application\ServiceOrders\Data\ServiceOrderData;
+use App\Application\ServiceOrders\Data\CreateServiceOrderData;
 use App\Application\ServiceOrders\Data\ServiceOrderListResult;
+use App\Application\ServiceOrders\Data\UpdateServiceOrderData;
+use App\Application\ServiceOrders\DeleteServiceOrder;
 use App\Application\ServiceOrders\GetServiceOrder;
 use App\Application\ServiceOrders\ListServiceOrders;
 use App\Application\ServiceOrders\UpdateServiceOrder;
 use App\Domain\ServiceOrders\Exceptions\InvalidServiceOrderCategory;
 use App\Domain\ServiceOrders\Exceptions\ServiceOrderNotFound;
+use App\Livewire\Concerns\InteractsWithFriendlyExceptions;
 use App\Models\Secretariat;
 use App\Models\ServiceOrder;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -19,23 +22,35 @@ use Livewire\WithPagination;
 
 class ServiceOrderManager extends Component
 {
-    use AuthorizesRequests, WithPagination;
+    use AuthorizesRequests, InteractsWithFriendlyExceptions, WithPagination;
 
     public Secretariat $secretariat;
+
     public $search = '';
 
     // Propriedades do formulário
     public $odsId = null;
+
     public $title = '';
+
     public $location = '';
+
     public $categoryId = '';
+
     public $dueDate = '';
+
     public $isUrgent = false;
+
     public $observation = '';
 
-    public function mount(Secretariat $secretariat)
+    public $newChecklistItem = '';
+
+    public array $checklistItems = [];
+
+    public function mount(Secretariat $secretariat): void
     {
         $this->authorize('view', $secretariat);
+        $this->authorize('viewAny', [ServiceOrder::class, $secretariat]);
         $this->secretariat = $secretariat;
     }
 
@@ -44,24 +59,48 @@ class ServiceOrderManager extends Component
         $this->resetPage();
     }
 
-    public function save()
+    public function addChecklistItem(): void
+    {
+        $label = trim((string) $this->newChecklistItem);
+
+        if ($label === '') {
+            return;
+        }
+
+        $this->checklistItems[] = [
+            'label' => $label,
+            'is_completed' => false,
+        ];
+
+        $this->newChecklistItem = '';
+    }
+
+    public function removeChecklistItem(int $index): void
+    {
+        unset($this->checklistItems[$index]);
+        $this->checklistItems = array_values($this->checklistItems);
+    }
+
+    public function save(): void
     {
         Log::info('Tentando salvar ODS...', ['title' => $this->title, 'cat' => $this->categoryId]);
 
         $this->validate([
             'title' => 'required|min:3',
             'categoryId' => 'required|integer',
+            'checklistItems.*.label' => 'nullable|string|max:255',
+            'checklistItems.*.is_completed' => 'boolean',
         ]);
 
         try {
-            $data = $this->serviceOrderData();
-
             if ($this->odsId) {
-                $serviceOrder = app(GetServiceOrder::class)->handle($this->secretariat->id, (int) $this->odsId);
+                $data = UpdateServiceOrderData::fromArray($this->formState());
+                $serviceOrder = $this->findServiceOrderForCurrentSecretariat((int) $this->odsId);
                 $this->authorize('update', $serviceOrder);
                 app(UpdateServiceOrder::class)->handle($this->secretariat->id, (int) $this->odsId, $data);
                 session()->flash('success', 'Ordem atualizada com sucesso!');
             } else {
+                $data = CreateServiceOrderData::fromArray($this->formState());
                 $this->authorize('create', [ServiceOrder::class, $this->secretariat]);
                 app(CreateServiceOrder::class)->handle($this->secretariat->id, $data);
                 session()->flash('success', 'Ordem criada com sucesso!');
@@ -73,36 +112,47 @@ class ServiceOrderManager extends Component
             $this->dispatch('ods-saved'); // Fecha o modal via Alpine
 
         } catch (InvalidServiceOrderCategory|ServiceOrderNotFound $e) {
-            session()->flash('error', $e->getMessage());
+            $this->flashException($e, 'error');
         } catch (\Throwable $e) {
-            Log::error('Erro ao salvar ODS: ' . $e->getMessage());
-            session()->flash('error', 'Nao foi possivel salvar a ordem de servico agora. Tente novamente.');
+            Log::error('Erro ao salvar ODS: '.$e->getMessage());
+            $this->flashFallback('Nao foi possivel salvar a ordem de servico agora. Tente novamente.', 'error');
         }
     }
 
-    public function edit($id)
+    public function edit($id): void
     {
         try {
-            $ods = app(GetServiceOrder::class)->handle($this->secretariat->id, (int) $id);
-            $this->authorize('view', $ods);
+            $ods = $this->findServiceOrderForCurrentSecretariat((int) $id);
+            $this->authorize('update', $ods);
         } catch (ServiceOrderNotFound $e) {
-            session()->flash('error', $e->getMessage());
+            $this->flashException($e, 'error');
+
             return;
         }
 
-        $this->odsId = $ods->id;
-        $this->title = $ods->title;
-        $this->location = $ods->location;
-        $this->categoryId = $ods->category_id;
-        $this->dueDate = $ods->due_date;
-        $this->isUrgent = (bool)$ods->is_urgent;
-        $this->observation = $ods->observation;
+        $this->fill([
+            'odsId' => $ods->id,
+            ...UpdateServiceOrderData::fromServiceOrder($ods)->toFormState(),
+        ]);
         $this->dispatch('open-ods-modal', mode: 'edit');
     }
 
-    public function resetForm()
+    public function delete($id): void
     {
-        $this->reset(['odsId', 'title', 'location', 'categoryId', 'dueDate', 'isUrgent', 'observation']);
+        try {
+            $serviceOrder = $this->findServiceOrderForCurrentSecretariat((int) $id);
+            $this->authorize('delete', $serviceOrder);
+            app(DeleteServiceOrder::class)->handle($this->secretariat->id, (int) $id);
+
+            session()->flash('success', 'Ordem removida com sucesso!');
+        } catch (ServiceOrderNotFound $e) {
+            $this->flashException($e, 'error');
+        }
+    }
+
+    public function resetForm(): void
+    {
+        $this->reset(['odsId', 'title', 'location', 'categoryId', 'dueDate', 'isUrgent', 'observation', 'newChecklistItem', 'checklistItems']);
         $this->resetValidation();
     }
 
@@ -115,19 +165,36 @@ class ServiceOrderManager extends Component
         return view('livewire.secretariat.service-order-manager', [
             'serviceOrders' => $listing->serviceOrders,
             'summary' => $listing->summary,
-            'categories' => $this->secretariat->categories
+            'categories' => $this->secretariat->categories,
         ])->layout('layouts.app');
     }
 
-    private function serviceOrderData(): ServiceOrderData
+    /**
+     * @return array{
+     *     title:string,
+     *     location:string,
+     *     category_id:int|string,
+     *     due_date:string,
+     *     is_urgent:bool,
+     *     observation:string,
+     *     checklist_items:list<array{label?:string|null,is_completed?:bool}>
+     * }
+     */
+    private function formState(): array
     {
-        return ServiceOrderData::fromArray([
+        return [
             'title' => $this->title,
             'location' => $this->location,
             'category_id' => $this->categoryId,
             'due_date' => $this->dueDate,
             'is_urgent' => (bool) $this->isUrgent,
             'observation' => $this->observation,
-        ]);
+            'checklist_items' => $this->checklistItems,
+        ];
+    }
+
+    private function findServiceOrderForCurrentSecretariat(int $id): ServiceOrder
+    {
+        return app(GetServiceOrder::class)->handle($this->secretariat->id, $id);
     }
 }

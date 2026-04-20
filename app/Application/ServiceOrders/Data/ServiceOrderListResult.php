@@ -12,6 +12,5 @@ final readonly class ServiceOrderListResult
     public function __construct(
         public LengthAwarePaginator $serviceOrders,
         public array $summary,
-    ) {
-    }
+    ) {}
 }

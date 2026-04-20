@@ -1,0 +1,2014 @@
+<!doctype html>
+<html lang="pt-br" class="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Painel Urbanismo - ODS</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+      };
+    </script>
+
+    <script>
+      // Script de inicialização do tema para evitar Flash of Unstyled Content (FOUC)
+      function initTheme() {
+        if (
+          localStorage.theme === "dark" ||
+          (!("theme" in localStorage) &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches)
+        ) {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+      }
+      initTheme();
+    </script>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+      }
+
+      /* Utilitários Customizados */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+
+      /* --- Scrollbar Personalizada --- */
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background-color: rgba(148, 163, 184, 0.5);
+        border-radius: 9999px;
+      }
+
+      .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+        background-color: rgba(71, 85, 105, 0.5);
+      }
+
+      .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+        background-color: #cbd5e1;
+      }
+
+      .dark .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+        background-color: #475569;
+      }
+
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background-color: #94a3b8 !important;
+      }
+
+      .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background-color: #64748b !important;
+      }
+
+      /* Transições Específicas do Modal */
+      .modal-transition {
+        transition:
+          opacity 0.3s ease,
+          transform 0.3s ease;
+      }
+    </style>
+  </head>
+
+  <body
+    class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 h-screen flex flex-col overflow-hidden selection:bg-slate-300 dark:selection:bg-slate-700"
+  >
+    <header
+      class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 py-4 flex flex-col md:flex-row items-center justify-between z-20 shrink-0 gap-3 transition-colors duration-200"
+    >
+      <div class="flex items-center gap-2 w-full md:w-auto">
+        <button
+          onclick="toggleSidebar()"
+          class="h-8 w-8 flex items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 group shrink-0"
+          aria-label="Abrir Menu"
+        >
+          <i
+            class="ph ph-list text-lg group-active:scale-90 transition-transform"
+          ></i>
+        </button>
+
+        <div class="flex items-center gap-3">
+          <span class="font-bold text-slate-900 dark:text-white tracking-tight"
+            >Urbanismo<span class="text-slate-400 font-normal"
+              >/otavioesteves</span
+            ></span
+          >
+        </div>
+      </div>
+
+      <div
+        class="h-8 flex items-center bg-slate-50 dark:bg-slate-800 rounded-md px-1 border border-slate-200 dark:border-slate-700 shadow-inner overflow-x-auto max-w-full transition-colors duration-200 scrollbar-hide"
+      >
+        <div
+          class="flex items-center px-2.5 h-full gap-1.5 border-r border-slate-200 dark:border-slate-700 whitespace-nowrap"
+        >
+          <i class="ph ph-files text-slate-400 text-sm"></i>
+          <span class="text-xs font-medium text-slate-600 dark:text-slate-300"
+            >Total <span class="font-bold">6</span></span
+          >
+        </div>
+
+        <div
+          class="flex items-center px-2.5 h-full gap-1.5 border-r border-slate-200 dark:border-slate-700 whitespace-nowrap"
+        >
+          <div class="w-1.5 h-1.5 rounded-full bg-red-500"></div>
+          <span class="text-xs font-medium text-red-600 dark:text-red-400"
+            >Urgentes <span class="font-bold">3</span></span
+          >
+        </div>
+
+        <div
+          class="flex items-center px-2.5 h-full gap-1.5 border-r border-slate-200 dark:border-slate-700 whitespace-nowrap"
+        >
+          <div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
+          <span class="text-xs font-medium text-amber-600 dark:text-amber-400"
+            >Vencidas <span class="font-bold">1</span></span
+          >
+        </div>
+
+        <div
+          class="flex items-center px-2.5 h-full gap-1.5 border-r border-slate-200 dark:border-slate-700 whitespace-nowrap"
+        >
+          <div class="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+          <span class="text-xs font-medium text-blue-600 dark:text-blue-400"
+            >Em And. <span class="font-bold">15</span></span
+          >
+        </div>
+
+        <div class="flex items-center px-2.5 h-full gap-1.5 whitespace-nowrap">
+          <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+          <span
+            class="text-xs font-medium text-emerald-600 dark:text-emerald-400"
+            >Concluídas <span class="font-bold">54</span></span
+          >
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 w-full md:w-auto">
+        <button
+          type="button"
+          onclick="toggleFilterMenu()"
+          aria-label="Filtrar Categorias"
+          class="h-8 w-8 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 transition-colors duration-200 shrink-0"
+        >
+          <i class="ph ph-funnel text-base"></i>
+        </button>
+
+        <div class="relative flex-1 md:w-56 h-8">
+          <i
+            class="ph ph-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-sm"
+          ></i>
+          <input
+            type="text"
+            placeholder="Buscar..."
+            class="w-full h-full pl-8 pr-3 text-xs border border-slate-300 dark:border-slate-700 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-slate-400 dark:focus:ring-slate-600 focus:outline-none shadow-sm placeholder-slate-400 dark:placeholder-slate-500 transition-shadow duration-200"
+          />
+        </div>
+
+        <button
+          type="button"
+          onclick="openModal('create')"
+          class="h-8 flex items-center justify-center gap-1.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-3 rounded-md font-bold text-xs hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors duration-200 shadow-sm whitespace-nowrap order-last md:order-none shrink-0"
+        >
+          <span>Nova ODS +</span>
+        </button>
+      </div>
+    </header>
+
+    <main
+      class="flex-1 overflow-y-auto p-6 pb-32 bg-slate-100 dark:bg-slate-950 transition-colors duration-200"
+    >
+      <div
+        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
+      >
+        <div
+          onclick="
+            openModal('edit', {
+              id: '001',
+              title: 'Troca de Lâmpada',
+              location: 'Av. Bernardo Sayão',
+              category: 'Iluminação',
+              date: '2025-11-25',
+              urgent: true,
+              checklist: [
+                { text: 'Verificar fiação base', done: true },
+                { text: 'Substituir reator', done: false },
+                { text: 'Instalar lâmpada LED', done: false },
+              ],
+            })
+          "
+          class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 relative overflow-hidden group hover:shadow-md transition-all duration-200 cursor-pointer"
+        >
+          <div class="h-1.5 w-full bg-red-500 absolute top-0"></div>
+          <div class="p-5">
+            <div class="flex justify-between items-start mb-3">
+              <span
+                class="text-lg font-bold text-slate-800 dark:text-white transition-colors"
+                >ODS -001</span
+              >
+              <span
+                class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-bold px-2 py-1 rounded border border-slate-200 dark:border-slate-700 uppercase transition-colors"
+                >Ilumin.</span
+              >
+            </div>
+            <div class="mb-4">
+              <h3
+                class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1 transition-colors"
+              >
+                Troca de Lâmpada
+              </h3>
+              <p
+                class="text-xs text-slate-500 dark:text-slate-400 transition-colors"
+              >
+                Av. Bernardo Sayão
+              </p>
+              <p
+                class="text-xs text-slate-400 dark:text-slate-500 mt-1 transition-colors"
+              >
+                25/11/2025
+              </p>
+            </div>
+            <div class="flex justify-between items-center mt-4">
+              <button
+                type="button"
+                onclick="
+                  event.stopPropagation();
+                  openModal('checklist', {
+                    id: '001',
+                    title: 'Troca de Lâmpada',
+                    location: 'Av. Bernardo Sayão',
+                    category: 'Iluminação',
+                    date: '2025-11-25',
+                    urgent: true,
+                    checklist: [
+                      { text: 'Verificar fiação base', done: true },
+                      { text: 'Substituir reator', done: false },
+                      { text: 'Instalar lâmpada LED', done: false },
+                    ],
+                  });
+                "
+                class="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                title="Abrir Checklist"
+              >
+                <i class="ph ph-list-checks text-lg"></i>
+              </button>
+
+              <span
+                class="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-900/50 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1 transition-colors"
+              >
+                <i
+                  class="ph ph-warning-circle text-red-500 dark:text-red-400"
+                ></i>
+                Urgente
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div
+          onclick="
+            openModal('edit', {
+              id: '002',
+              title: 'Buraco na Via',
+              location: 'Rua das Magnólias',
+              category: 'Obras',
+              date: '2025-11-26',
+              urgent: true,
+              checklist: [
+                { text: 'Sinalizar perímetro', done: true },
+                { text: 'Remover asfalto solto', done: true },
+                { text: 'Aplicar compactação', done: false },
+              ],
+            })
+          "
+          class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 relative overflow-hidden group hover:shadow-md transition-all duration-200 cursor-pointer"
+        >
+          <div class="h-1.5 w-full bg-red-500 absolute top-0"></div>
+          <div class="p-5">
+            <div class="flex justify-between items-start mb-3">
+              <span
+                class="text-lg font-bold text-slate-800 dark:text-white transition-colors"
+                >ODS -002</span
+              >
+              <span
+                class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-bold px-2 py-1 rounded border border-slate-200 dark:border-slate-700 uppercase transition-colors"
+                >Obra</span
+              >
+            </div>
+            <div class="mb-4">
+              <h3
+                class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1 transition-colors"
+              >
+                Buraco na Via
+              </h3>
+              <p
+                class="text-xs text-slate-500 dark:text-slate-400 transition-colors"
+              >
+                Rua das Magnólias
+              </p>
+              <p
+                class="text-xs text-slate-400 dark:text-slate-500 mt-1 transition-colors"
+              >
+                26/11/2025
+              </p>
+            </div>
+            <div class="flex justify-between items-center mt-4">
+              <button
+                type="button"
+                onclick="
+                  event.stopPropagation();
+                  openModal('checklist', {
+                    id: '002',
+                    title: 'Buraco na Via',
+                    location: 'Rua das Magnólias',
+                    category: 'Obras',
+                    date: '2025-11-26',
+                    urgent: true,
+                    checklist: [
+                      { text: 'Sinalizar perímetro', done: true },
+                      { text: 'Remover asfalto solto', done: true },
+                      { text: 'Aplicar compactação', done: false },
+                    ],
+                  });
+                "
+                class="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                title="Abrir Checklist"
+              >
+                <i class="ph ph-list-checks text-lg"></i>
+              </button>
+
+              <span
+                class="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-900/50 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1 transition-colors"
+              >
+                <i
+                  class="ph ph-warning-circle text-red-500 dark:text-red-400"
+                ></i>
+                Urgente
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div
+          onclick="
+            openModal('edit', {
+              id: '045',
+              title: 'Roçagem Praça',
+              location: 'Praça da Bíblia',
+              category: 'Limpeza',
+              date: '2025-11-20',
+              urgent: false,
+              checklist: [],
+            })
+          "
+          class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 relative overflow-hidden group hover:shadow-md transition-all duration-200 cursor-pointer"
+        >
+          <div class="h-1.5 w-full bg-blue-500 absolute top-0"></div>
+          <div class="p-5">
+            <div class="flex justify-between items-start mb-3">
+              <span
+                class="text-lg font-bold text-slate-800 dark:text-white transition-colors"
+                >ODS -045</span
+              >
+              <span
+                class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-bold px-2 py-1 rounded border border-slate-200 dark:border-slate-700 uppercase transition-colors"
+                >Limpeza</span
+              >
+            </div>
+            <div class="mb-4">
+              <h3
+                class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1 transition-colors"
+              >
+                Roçagem Praça
+              </h3>
+              <p
+                class="text-xs text-slate-500 dark:text-slate-400 transition-colors"
+              >
+                Praça da Bíblia
+              </p>
+              <p
+                class="text-xs text-slate-400 dark:text-slate-500 mt-1 transition-colors"
+              >
+                20/11/2025
+              </p>
+            </div>
+            <div class="flex justify-between items-center mt-4">
+              <button
+                type="button"
+                onclick="
+                  event.stopPropagation();
+                  openModal('checklist', {
+                    id: '045',
+                    title: 'Roçagem Praça',
+                    location: 'Praça da Bíblia',
+                    category: 'Limpeza',
+                    date: '2025-11-20',
+                    urgent: false,
+                    checklist: [],
+                  });
+                "
+                class="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                title="Abrir Checklist"
+              >
+                <i class="ph ph-list-checks text-lg"></i>
+              </button>
+
+              <span
+                class="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1 transition-colors"
+              >
+                <i
+                  class="ph ph-spinner text-blue-500 dark:text-blue-400 animate-spin-slow"
+                ></i>
+                Em And.
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div
+          onclick="
+            openModal('edit', {
+              id: '010',
+              title: 'Troca Relé',
+              location: 'Av. Brasil, Centro',
+              category: 'Iluminação',
+              date: '2025-11-10',
+              urgent: false,
+              checklist: [],
+            })
+          "
+          class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 relative overflow-hidden group hover:shadow-md transition-all duration-200 cursor-pointer"
+        >
+          <div class="h-1.5 w-full bg-emerald-500 absolute top-0"></div>
+          <div class="p-5">
+            <div class="flex justify-between items-start mb-3">
+              <span
+                class="text-lg font-bold text-slate-800 dark:text-white transition-colors"
+                >ODS -010</span
+              >
+              <span
+                class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-bold px-2 py-1 rounded border border-slate-200 dark:border-slate-700 uppercase transition-colors"
+                >Ilumin.</span
+              >
+            </div>
+            <div class="mb-4">
+              <h3
+                class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1 transition-colors"
+              >
+                Troca Relé
+              </h3>
+              <p
+                class="text-xs text-slate-500 dark:text-slate-400 transition-colors"
+              >
+                Av. Brasil, Centro
+              </p>
+              <p
+                class="text-xs text-slate-400 dark:text-slate-500 mt-1 transition-colors"
+              >
+                10/11/2025
+              </p>
+            </div>
+            <div class="flex justify-between items-center mt-4">
+              <button
+                type="button"
+                onclick="
+                  event.stopPropagation();
+                  openModal('checklist', {
+                    id: '010',
+                    title: 'Troca Relé',
+                    location: 'Av. Brasil, Centro',
+                    category: 'Iluminação',
+                    date: '2025-11-10',
+                    urgent: false,
+                    checklist: [],
+                  });
+                "
+                class="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                title="Abrir Checklist"
+              >
+                <i class="ph ph-list-checks text-lg"></i>
+              </button>
+
+              <span
+                class="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1 transition-colors"
+              >
+                <i
+                  class="ph ph-check-circle text-emerald-500 dark:text-emerald-400"
+                ></i>
+                Concluída
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div
+          onclick="
+            openModal('edit', {
+              id: '046',
+              title: 'Retirada Entulho',
+              location: 'Setor Santa Efigênia',
+              category: 'Limpeza',
+              date: '2025-11-21',
+              urgent: false,
+              checklist: [],
+            })
+          "
+          class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 relative overflow-hidden group hover:shadow-md transition-all duration-200 cursor-pointer"
+        >
+          <div class="h-1.5 w-full bg-blue-500 absolute top-0"></div>
+          <div class="p-5">
+            <div class="flex justify-between items-start mb-3">
+              <span
+                class="text-lg font-bold text-slate-800 dark:text-white transition-colors"
+                >ODS -046</span
+              >
+              <span
+                class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-bold px-2 py-1 rounded border border-slate-200 dark:border-slate-700 uppercase transition-colors"
+                >Limpeza</span
+              >
+            </div>
+            <div class="mb-4">
+              <h3
+                class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1 transition-colors"
+              >
+                Retirada Entulho
+              </h3>
+              <p
+                class="text-xs text-slate-500 dark:text-slate-400 transition-colors"
+              >
+                Setor Santa Efigênia
+              </p>
+              <p
+                class="text-xs text-slate-400 dark:text-slate-500 mt-1 transition-colors"
+              >
+                21/11/2025
+              </p>
+            </div>
+            <div class="flex justify-between items-center mt-4">
+              <button
+                type="button"
+                onclick="
+                  event.stopPropagation();
+                  openModal('checklist', {
+                    id: '046',
+                    title: 'Retirada Entulho',
+                    location: 'Setor Santa Efigênia',
+                    category: 'Limpeza',
+                    date: '2025-11-21',
+                    urgent: false,
+                    checklist: [],
+                  });
+                "
+                class="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                title="Abrir Checklist"
+              >
+                <i class="ph ph-list-checks text-lg"></i>
+              </button>
+
+              <span
+                class="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1 transition-colors"
+              >
+                <i
+                  class="ph ph-spinner text-blue-500 dark:text-blue-400 animate-spin-slow"
+                ></i>
+                Em And.
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <div
+      id="modalODS"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm hidden opacity-0 modal-transition"
+      aria-hidden="true"
+    >
+      <div
+        class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform scale-95 modal-transition flex flex-col max-h-[90vh] h-[90vh] md:h-[621px]"
+      >
+        <div
+          class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 shrink-0"
+        >
+          <div class="flex items-center gap-2">
+            <h2
+              id="modalTitle"
+              class="text-lg font-bold text-slate-900 dark:text-white transition-colors"
+            >
+              Nova Ordem de Serviço
+            </h2>
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              id="btnToggleView"
+              onclick="toggleModalView()"
+              class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors duration-200"
+              aria-label="Alternar Visualização"
+              title="Alternar Detalhes/Checklist"
+            >
+              <i id="iconToggleView" class="ph ph-list-checks text-2xl"></i>
+            </button>
+            <div
+              class="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-1"
+              aria-hidden="true"
+            ></div>
+            <button
+              type="button"
+              onclick="closeModal()"
+              class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors duration-200"
+              aria-label="Fechar Modal"
+            >
+              <i class="ph ph-x text-2xl"></i>
+            </button>
+          </div>
+        </div>
+
+        <form
+          id="odsForm"
+          class="flex flex-col flex-1 overflow-hidden"
+          onsubmit="
+            event.preventDefault();
+            closeModal();
+          "
+        >
+          <div
+            id="formMainFields"
+            class="space-y-4 p-6 overflow-y-auto custom-scrollbar flex-1"
+          >
+            <div>
+              <label
+                class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 transition-colors"
+              >
+                Título do Serviço
+              </label>
+              <input
+                type="text"
+                id="inputTitle"
+                placeholder="Ex: Reparo de calçada"
+                class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-slate-400 outline-none transition-all duration-200 text-slate-900 dark:text-slate-100"
+              />
+            </div>
+
+            <div>
+              <label
+                class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 transition-colors"
+              >
+                Localização (Endereço/Ponto)
+              </label>
+              <input
+                type="text"
+                id="inputLocation"
+                placeholder="Nome da rua, bairro ou praça"
+                class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-slate-400 outline-none transition-all duration-200 text-slate-900 dark:text-slate-100"
+              />
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div class="col-span-2 sm:col-span-1">
+                <label
+                  class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 transition-colors"
+                >
+                  Categoria
+                </label>
+                <div class="relative">
+                  <select
+                    id="inputCategory"
+                    class="w-full h-10 pl-3 pr-10 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-slate-400 outline-none transition-all duration-200 text-slate-900 dark:text-slate-100 cursor-pointer appearance-none"
+                  >
+                    <option value="Iluminação">Iluminação</option>
+                    <option value="Limpeza">Limpeza</option>
+                    <option value="Obras">Obras</option>
+                    <option value="Urbanismo">Urbanismo</option>
+                  </select>
+
+                  <div
+                    class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"
+                  >
+                    <svg
+                      class="h-4 w-4 text-slate-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 9l-7 7-7-7"
+                      ></path>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-span-2 sm:col-span-1">
+                <label
+                  class="block w-full text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 transition-colors"
+                >
+                  Data Início
+                </label>
+                <input
+                  type="date"
+                  id="inputDate"
+                  class="w-full h-10 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-slate-400 outline-none transition-all duration-200 text-slate-900 dark:text-slate-100 dark:[color-scheme:dark]"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label
+                class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-3 transition-colors"
+                >Nível de Prioridade</label
+              >
+
+              <label
+                class="relative block cursor-pointer group touch-manipulation select-none"
+              >
+                <input
+                  type="checkbox"
+                  id="inputUrgent"
+                  name="is_urgent"
+                  class="sr-only"
+                />
+
+                <div
+                  class="flex items-center justify-between p-4 rounded-2xl border transition-all duration-75 bg-white dark:bg-slate-950/40 border-slate-200 dark:border-slate-800 group-has-[:checked]:bg-red-50/50 dark:group-has-[:checked]:bg-red-950/20 group-has-[:focus-visible]:ring-2 group-has-[:focus-visible]:ring-red-500/20 group-has-[:focus-visible]:ring-offset-2"
+                >
+                  <div class="flex items-center gap-4">
+                    <div
+                      class="flex items-center justify-center w-10 h-10 rounded-xl transition-colors bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-500 group-has-[:checked]:bg-red-500 group-has-[:checked]:text-white"
+                    >
+                      <i class="ph-fill ph-warning text-xl"></i>
+                    </div>
+
+                    <div class="flex flex-col">
+                      <span
+                        class="text-sm font-bold text-slate-900 dark:text-white leading-none mb-1"
+                        >Prioridade Urgente</span
+                      >
+                      <span class="text-xs text-slate-500"
+                        >Destaque visual imediato no painel</span
+                      >
+                    </div>
+                  </div>
+
+                  <div
+                    class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all border-slate-200 dark:border-slate-700 group-has-[:checked]:bg-red-500 group-has-[:checked]:border-red-500"
+                  >
+                    <i
+                      class="ph ph-check text-white text-[10px] font-bold scale-0 group-has-[:checked]:scale-100 transition-transform"
+                    ></i>
+                  </div>
+                </div>
+              </label>
+            </div>
+            <div>
+              <label
+                class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 transition-colors"
+                >Observação</label
+              >
+              <textarea
+                id="inputObs"
+                rows="3"
+                placeholder="Informações extras..."
+                class="block w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-slate-400 outline-none transition-all duration-200 resize-none text-slate-900 dark:text-slate-100 custom-scrollbar"
+              ></textarea>
+            </div>
+          </div>
+
+          <div
+            id="checklistSection"
+            class="hidden flex flex-col h-full overflow-hidden p-6"
+          >
+            <label
+              class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2 transition-colors shrink-0"
+            >
+              Checklist de Execução
+            </label>
+
+            <ul
+              id="checklistContainer"
+              class="space-y-2 flex-1 overflow-y-auto custom-scrollbar mb-4 min-h-0"
+            ></ul>
+
+            <div class="flex gap-2 shrink-0 pt-2 border-t border-transparent">
+              <input
+                type="text"
+                id="inputChecklistItem"
+                placeholder="Adicionar etapa..."
+                class="flex-1 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-slate-400 outline-none transition-all duration-200 text-slate-900 dark:text-slate-100"
+                onkeypress="
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    addChecklistItem();
+                  }
+                "
+              />
+              <button
+                type="button"
+                onclick="addChecklistItem()"
+                class="px-3 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg transition-colors"
+              >
+                <i class="ph ph-plus font-bold"></i>
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <div class="px-6 pb-6 pt-0 shrink-0 border-t-0">
+          <div class="flex gap-3">
+            <button
+              type="button"
+              onclick="closeModal()"
+              class="flex-1 px-4 py-2.5 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-sm rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors duration-200"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              onclick="document.getElementById('odsForm').requestSubmit()"
+              id="btnSubmit"
+              class="flex-1 px-4 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-sm rounded-xl hover:bg-slate-800 dark:hover:bg-slate-100 transition-all duration-200 shadow-lg shadow-slate-900/10 hover:shadow-xl"
+            >
+              Criar ODS
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="modalSettings"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm hidden opacity-0 modal-transition"
+      aria-hidden="true"
+    >
+      <div
+        class="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform scale-95 modal-transition flex h-[600px] max-h-[90vh]"
+      >
+        <aside
+          class="w-64 border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-6 flex flex-col gap-6 shrink-0 hidden md:flex"
+        >
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-bold text-slate-900 dark:text-white">
+              Configurações
+            </h2>
+          </div>
+
+          <nav class="space-y-1">
+            <button
+              id="nav-profile"
+              onclick="switchSettingsTab('profile')"
+              class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-semibold rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-slate-700 transition-all"
+            >
+              <i class="ph-duotone ph-user text-lg"></i>
+              Perfil
+            </button>
+            <button
+              id="nav-security"
+              onclick="switchSettingsTab('security')"
+              class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white transition-colors"
+            >
+              <i class="ph-duotone ph-shield text-lg"></i>
+              Segurança
+            </button>
+            <button
+              id="nav-theme"
+              onclick="switchSettingsTab('theme')"
+              class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white transition-colors"
+            >
+              <i class="ph-duotone ph-paint-brush text-lg"></i>
+              Tema
+            </button>
+            <button
+              id="nav-about"
+              onclick="switchSettingsTab('about')"
+              class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white transition-colors"
+            >
+              <i class="ph-duotone ph-info text-lg"></i>
+              Sobre
+            </button>
+          </nav>
+        </aside>
+
+        <main class="flex-1 flex flex-col min-w-0 bg-white dark:bg-slate-900">
+          <div class="flex items-center justify-end p-4 shrink-0">
+            <button
+              type="button"
+              onclick="closeSettingsModal()"
+              class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors duration-200 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+              aria-label="Fechar Configurações"
+            >
+              <i class="ph ph-x text-2xl"></i>
+            </button>
+          </div>
+
+          <div class="flex-1 overflow-y-auto px-8 md:px-12 pb-12">
+            <div class="max-w-3xl mx-auto">
+              <div
+                id="tab-profile"
+                class="flex flex-col-reverse md:flex-row gap-8 md:gap-12"
+              >
+                <div class="flex-1 space-y-6">
+                  <div>
+                    <h3
+                      class="text-xl font-bold text-slate-900 dark:text-white mb-1"
+                    >
+                      Perfil Público
+                    </h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">
+                      Estas informações serão exibidas publicamente.
+                    </p>
+                  </div>
+
+                  <div class="space-y-5">
+                    <div>
+                      <label
+                        class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5"
+                      >
+                        Nome público
+                      </label>
+                      <input
+                        type="text"
+                        value="Otávio Esteves"
+                        class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-slate-400 outline-none transition-all duration-200 text-slate-900 dark:text-slate-100"
+                      />
+                      <p
+                        class="mt-1.5 text-xs text-slate-400 dark:text-slate-500"
+                      >
+                        Seu nome como aparecerá para outros usuários.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label
+                        class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5"
+                      >
+                        E-mail público
+                      </label>
+                      <input
+                        type="email"
+                        value="otavio.esteves@urbanismo.gov"
+                        class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-slate-400 outline-none transition-all duration-200 text-slate-900 dark:text-slate-100"
+                      />
+                      <p
+                        class="mt-1.5 text-xs text-slate-400 dark:text-slate-500"
+                      >
+                        Este e-mail será usado para notificações.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="pt-4">
+                    <button
+                      class="px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-sm rounded-xl hover:bg-slate-800 dark:hover:bg-slate-100 transition-all duration-200 shadow-lg shadow-slate-900/10 hover:shadow-xl"
+                    >
+                      Salvar Alterações
+                    </button>
+                  </div>
+                </div>
+
+                <div class="md:w-48 flex flex-col items-center">
+                  <label
+                    class="block w-full text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-4 text-center md:text-left"
+                  >
+                    Foto de Perfil
+                  </label>
+                  <div class="relative group cursor-pointer">
+                    <div
+                      class="w-32 h-32 md:w-40 md:h-40 rounded-full bg-slate-200 dark:bg-slate-800 border-4 border-white dark:border-slate-900 shadow-xl flex items-center justify-center overflow-hidden"
+                    >
+                      <span
+                        class="text-4xl font-bold text-slate-400 dark:text-slate-600"
+                        >OE</span
+                      >
+                    </div>
+                    <div
+                      class="absolute inset-0 rounded-full bg-slate-900/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                    >
+                      <i class="ph ph-camera text-white text-3xl"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="tab-security" class="hidden flex flex-col gap-8">
+                <div class="flex-1 space-y-6">
+                  <div>
+                    <h3
+                      class="text-xl font-bold text-slate-900 dark:text-white mb-1"
+                    >
+                      Segurança e Acesso
+                    </h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">
+                      Gerencie suas credenciais de acesso ao sistema.
+                    </p>
+                  </div>
+
+                  <div class="space-y-5">
+                    <div>
+                      <label
+                        class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5"
+                      >
+                        E-mail de Login
+                      </label>
+                      <input
+                        type="email"
+                        value="otavio.esteves@urbanismo.gov"
+                        class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-slate-400 outline-none transition-all duration-200 text-slate-900 dark:text-slate-100"
+                      />
+                      <p
+                        class="mt-1.5 text-xs text-slate-400 dark:text-slate-500"
+                      >
+                        Usado para efetuar login na plataforma.
+                      </p>
+                    </div>
+
+                    <div
+                      class="border-t border-slate-200 dark:border-slate-800 my-4"
+                    ></div>
+
+                    <div class="space-y-4">
+                      <div>
+                        <label
+                          class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5"
+                        >
+                          Senha Atual
+                        </label>
+                        <input
+                          type="password"
+                          placeholder="••••••••"
+                          class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-slate-400 outline-none transition-all duration-200 text-slate-900 dark:text-slate-100"
+                        />
+                      </div>
+
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label
+                            class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5"
+                          >
+                            Nova Senha
+                          </label>
+                          <input
+                            type="password"
+                            class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-slate-400 outline-none transition-all duration-200 text-slate-900 dark:text-slate-100"
+                          />
+                        </div>
+                        <div>
+                          <label
+                            class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1.5"
+                          >
+                            Confirmar Nova Senha
+                          </label>
+                          <input
+                            type="password"
+                            class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-slate-400 outline-none transition-all duration-200 text-slate-900 dark:text-slate-100"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="pt-4">
+                    <button
+                      class="px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-sm rounded-xl hover:bg-slate-800 dark:hover:bg-slate-100 transition-all duration-200 shadow-lg shadow-slate-900/10 hover:shadow-xl"
+                    >
+                      Atualizar Senha
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div id="tab-theme" class="hidden flex flex-col gap-8">
+                <div class="flex-1 space-y-6">
+                  <div>
+                    <h3
+                      class="text-xl font-bold text-slate-900 dark:text-white mb-1"
+                    >
+                      Aparência e Tema
+                    </h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">
+                      Personalize como a interface é exibida no seu dispositivo.
+                    </p>
+                  </div>
+
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <button
+                      onclick="setTheme('light')"
+                      class="group relative flex flex-col gap-3 p-4 rounded-xl border-2 text-left transition-all duration-200 focus:outline-none ring-offset-2 focus:ring-2 ring-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white"
+                    >
+                      <div
+                        class="w-full aspect-[4/3] rounded-lg bg-slate-100 border border-slate-200 overflow-hidden relative"
+                      >
+                        <div
+                          class="absolute top-2 left-2 right-2 h-2 bg-white rounded-full shadow-sm"
+                        ></div>
+                        <div
+                          class="absolute top-6 left-2 bottom-2 w-6 bg-white rounded shadow-sm"
+                        ></div>
+                        <div
+                          class="absolute top-6 left-10 right-2 bottom-2 bg-white rounded shadow-sm flex flex-col gap-1 p-1.5"
+                        >
+                          <div class="h-1.5 w-1/2 bg-slate-100 rounded"></div>
+                          <div class="h-1.5 w-3/4 bg-slate-100 rounded"></div>
+                        </div>
+                      </div>
+                      <div>
+                        <span
+                          class="block font-bold text-slate-900 text-sm mb-0.5"
+                          >Modo Claro</span
+                        >
+                        <span class="block text-xs text-slate-500"
+                          >Visual limpo para ambientes iluminados.</span
+                        >
+                      </div>
+                      <div
+                        id="check-light"
+                        class="absolute top-4 right-4 w-5 h-5 bg-slate-900 rounded-full flex items-center justify-center opacity-0 transition-opacity"
+                      >
+                        <i class="ph ph-check text-white text-xs"></i>
+                      </div>
+                    </button>
+
+                    <button
+                      onclick="setTheme('dark')"
+                      class="group relative flex flex-col gap-3 p-4 rounded-xl border-2 text-left transition-all duration-200 focus:outline-none ring-offset-2 focus:ring-2 ring-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-slate-900"
+                    >
+                      <div
+                        class="w-full aspect-[4/3] rounded-lg bg-slate-950 border border-slate-800 overflow-hidden relative"
+                      >
+                        <div
+                          class="absolute top-2 left-2 right-2 h-2 bg-slate-800 rounded-full"
+                        ></div>
+                        <div
+                          class="absolute top-6 left-2 bottom-2 w-6 bg-slate-800 rounded"
+                        ></div>
+                        <div
+                          class="absolute top-6 left-10 right-2 bottom-2 bg-slate-800 rounded flex flex-col gap-1 p-1.5"
+                        >
+                          <div
+                            class="h-1.5 w-1/2 bg-slate-700/50 rounded"
+                          ></div>
+                          <div
+                            class="h-1.5 w-3/4 bg-slate-700/50 rounded"
+                          ></div>
+                        </div>
+                      </div>
+                      <div>
+                        <span class="block font-bold text-white text-sm mb-0.5"
+                          >Modo Escuro</span
+                        >
+                        <span class="block text-xs text-slate-400"
+                          >Confortável para ambientes com pouca luz.</span
+                        >
+                      </div>
+                      <div
+                        id="check-dark"
+                        class="absolute top-4 right-4 w-5 h-5 bg-white rounded-full flex items-center justify-center opacity-0 transition-opacity"
+                      >
+                        <i class="ph ph-check text-slate-900 text-xs"></i>
+                      </div>
+                    </button>
+
+                    <button
+                      onclick="setTheme('system')"
+                      class="group relative flex flex-col gap-3 p-4 rounded-xl border-2 text-left transition-all duration-200 focus:outline-none ring-offset-2 focus:ring-2 ring-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-slate-50 dark:bg-slate-800"
+                    >
+                      <div
+                        class="w-full aspect-[4/3] rounded-lg bg-slate-200 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 overflow-hidden relative flex"
+                      >
+                        <div
+                          class="w-1/2 h-full bg-slate-100 flex flex-col p-2 gap-1"
+                        >
+                          <div class="h-1 w-full bg-slate-200 rounded"></div>
+                          <div
+                            class="flex-1 bg-white rounded border border-slate-200"
+                          ></div>
+                        </div>
+                        <div
+                          class="w-1/2 h-full bg-slate-950 flex flex-col p-2 gap-1"
+                        >
+                          <div class="h-1 w-full bg-slate-800 rounded"></div>
+                          <div
+                            class="flex-1 bg-slate-900 rounded border border-slate-800"
+                          ></div>
+                        </div>
+                      </div>
+                      <div>
+                        <span
+                          class="block font-bold text-slate-900 dark:text-white text-sm mb-0.5"
+                          >Sistema</span
+                        >
+                        <span
+                          class="block text-xs text-slate-500 dark:text-slate-400"
+                          >Acompanha a configuração do dispositivo.</span
+                        >
+                      </div>
+                      <div
+                        id="check-system"
+                        class="absolute top-4 right-4 w-5 h-5 bg-slate-900 dark:bg-white rounded-full flex items-center justify-center opacity-0 transition-opacity"
+                      >
+                        <i
+                          class="ph ph-check text-white dark:text-slate-900 text-xs"
+                        ></i>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div id="tab-about" class="hidden flex flex-col gap-8">
+                <div class="flex-1 space-y-6">
+                  <div>
+                    <h3
+                      class="text-xl font-bold text-slate-900 dark:text-white mb-1"
+                    >
+                      Sobre o Sistema
+                    </h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">
+                      Informações sobre a versão e desenvolvimento.
+                    </p>
+                  </div>
+
+                  <div class="flex flex-col gap-4">
+                    <div
+                      class="bg-slate-50 dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left"
+                    >
+                      <div
+                        class="w-16 h-16 rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center shadow-sm text-slate-900 dark:text-white shrink-0"
+                      >
+                        <i class="ph-fill ph-buildings text-3xl"></i>
+                      </div>
+                      <div class="flex-1">
+                        <h4
+                          class="text-lg font-bold text-slate-900 dark:text-white"
+                        >
+                          PrefeituraConnect
+                        </h4>
+                        <div
+                          class="flex items-center justify-center sm:justify-start gap-2 mt-1 mb-2"
+                        >
+                          <span
+                            class="text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800"
+                          >
+                            Versão Alpha 1.0
+                          </span>
+                        </div>
+                        <p
+                          class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed"
+                        >
+                          Sistema integrado de gestão urbana focado na
+                          eficiência e transparência dos serviços públicos
+                          municipais.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div
+                      class="bg-slate-50 dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700"
+                    >
+                      <h5
+                        class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-4 tracking-wider"
+                      >
+                        Ficha Técnica
+                      </h5>
+
+                      <div class="space-y-4">
+                        <div
+                          class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-4 border-b border-slate-200 dark:border-slate-700/50"
+                        >
+                          <span
+                            class="text-sm text-slate-600 dark:text-slate-400"
+                            >Desenvolvido por</span
+                          >
+                          <span
+                            class="text-sm font-semibold text-slate-900 dark:text-white"
+                            >Otávio Esteves de Barros</span
+                          >
+                        </div>
+
+                        <div
+                          class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+                        >
+                          <span
+                            class="text-sm text-slate-600 dark:text-slate-400"
+                            >Repositório</span
+                          >
+                          <a
+                            href="https://github.com/otavio-esteves/municipal-management.git"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-bold rounded-lg hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors shadow-sm"
+                          >
+                            <i class="ph-fill ph-github-logo text-lg"></i>
+                            Acessar GitHub
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="text-center">
+                    <p class="text-xs text-slate-400 dark:text-slate-600">
+                      &copy; 2025 PrefeituraConnect. Todos os direitos
+                      reservados.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <div
+      id="sidebarOverlay"
+      onclick="toggleSidebar()"
+      class="fixed inset-0 bg-slate-900/20 dark:bg-black/40 backdrop-blur-sm z-40 hidden opacity-0 transition-opacity duration-300"
+      aria-hidden="true"
+    ></div>
+
+    <aside
+      id="sidebar"
+      class="fixed top-0 left-0 h-full w-80 bg-slate-50 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 z-50 transform -translate-x-full transition-transform duration-300 ease-out flex flex-col shadow-2xl"
+    >
+      <div
+        class="p-2.5 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0"
+      >
+        <div class="flex items-center gap-1">
+          <div
+            class="text-black p-1.5 rounded-md shadow-slate-900/20 dark:text-white"
+          >
+            <i class="ph-fill ph-buildings text-2xl"></i>
+          </div>
+          <span class="font-bold text-slate-900 dark:text-white tracking-tight"
+            >Prefeitura<span class="text-slate-400 font-normal"
+              >Connect</span
+            ></span
+          >
+        </div>
+        <button
+          onclick="toggleSidebar()"
+          class="text-slate-400 transition-colors p-2"
+        >
+          <i class="ph ph-x text-lg"></i>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-3 space-y-6 custom-scrollbar">
+        <div>
+          <h3
+            class="px-3 text-[10px] font-bold uppercase text-slate-500 mb-2 tracking-wider"
+          >
+            Geral
+          </h3>
+          <nav class="space-y-0.5">
+            <a
+              href="#"
+              class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white transition-colors"
+            >
+              <i class="ph-duotone ph-clipboard-text text-lg"></i>
+              Ordens de Serviço
+            </a>
+
+            <a
+              href="#"
+              class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white transition-colors"
+            >
+              <i class="ph-duotone ph-chart-pie-slice text-lg"></i>
+              Dashboard
+            </a>
+
+            <a
+              href="#"
+              class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white transition-colors"
+            >
+              <i class="ph-duotone ph-users text-lg"></i>
+              Equipes
+              <span
+                class="ml-auto bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 py-0.5 px-2 rounded-full text-[10px] font-bold"
+                >12</span
+              >
+            </a>
+
+            <a
+              href="#"
+              class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white transition-colors"
+            >
+              <i class="ph-duotone ph-scroll text-lg"></i>
+              Relatórios
+            </a>
+          </nav>
+        </div>
+
+        <div>
+          <h3
+            class="px-3 text-[10px] font-bold uppercase text-slate-500 mb-2 tracking-wider"
+          >
+            Administração
+          </h3>
+          <nav class="space-y-0.5">
+            <button
+              onclick="
+                toggleSubmenu('submenu-secretarias', 'chevron-secretarias')
+              "
+              class="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white transition-colors group"
+            >
+              <div class="flex items-center gap-3">
+                <i class="ph-duotone ph-bank text-lg"></i>
+                <span>Secretarias</span>
+              </div>
+              <i
+                id="chevron-secretarias"
+                class="ph ph-caret-down text-slate-400 transition-transform duration-200"
+              ></i>
+            </button>
+
+            <div id="submenu-secretarias" class="hidden space-y-0.5 pt-1">
+              <a
+                href="#"
+                class="flex items-center gap-3 px-3 pl-10 py-2 text-sm font-medium rounded-md text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white transition-colors"
+              >
+                <i
+                  class="ph-duotone ph-identification-badge text-lg opacity-70"
+                ></i>
+                Gabinete
+              </a>
+
+              <a
+                href="#"
+                class="flex items-center gap-3 px-3 pl-10 py-2 text-sm font-medium rounded-md text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white transition-colors"
+              >
+                <i class="ph-duotone ph-briefcase text-lg opacity-70"></i>
+                Governo
+              </a>
+
+              <a
+                href="#"
+                class="flex items-center gap-3 px-3 pl-10 py-2 text-sm font-medium rounded-md text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white transition-colors"
+              >
+                <i class="ph-duotone ph-gavel text-lg opacity-70"></i>
+                Procuradoria
+              </a>
+
+              <a
+                href="#"
+                class="flex items-center gap-3 px-3 pl-10 py-2 text-sm font-medium rounded-md text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white transition-colors"
+              >
+                <i class="ph-duotone ph-shield-check text-lg opacity-70"></i>
+                Controle Interno
+              </a>
+
+              <a
+                href="#"
+                class="flex items-center gap-3 px-3 pl-10 py-2 text-sm font-medium rounded-md text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white transition-colors"
+              >
+                <i class="ph-duotone ph-strategy text-lg opacity-70"></i>
+                Planejamento
+              </a>
+
+              <a
+                href="#"
+                class="flex items-center gap-3 px-3 pl-10 py-2 text-sm font-medium rounded-md text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white transition-colors"
+              >
+                <i class="ph-duotone ph-currency-dollar text-lg opacity-70"></i>
+                Finanças
+              </a>
+
+              <a
+                href="#"
+                class="flex items-center gap-3 px-3 pl-10 py-2 text-sm font-medium rounded-md text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white transition-colors"
+              >
+                <i class="ph-duotone ph-shopping-cart text-lg opacity-70"></i>
+                Compras
+              </a>
+
+              <a
+                href="#"
+                class="flex items-center gap-3 px-3 pl-10 py-2 text-sm font-medium rounded-md text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white transition-colors"
+              >
+                <i class="ph-duotone ph-megaphone text-lg opacity-70"></i>
+                Comunicação
+              </a>
+
+              <a
+                href="#"
+                class="flex items-center gap-3 px-3 pl-10 py-2 text-sm font-medium rounded-md text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white transition-colors"
+              >
+                <i class="ph-duotone ph-graduation-cap text-lg opacity-70"></i>
+                Educação
+              </a>
+
+              <a
+                href="#"
+                class="flex items-center gap-3 px-3 pl-10 py-2 text-sm font-medium rounded-md text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white transition-colors"
+              >
+                <i class="ph-duotone ph-heartbeat text-lg opacity-70"></i>
+                Saúde
+              </a>
+
+              <a
+                href="#"
+                class="flex items-center gap-3 px-3 pl-10 py-2 text-sm font-medium rounded-md bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-slate-800 relative group"
+              >
+                <i
+                  class="ph-duotone ph-map-trifold text-lg text-emerald-500"
+                ></i>
+                Urbanismo
+                <div
+                  class="absolute left-0 top-2 bottom-2 w-1 bg-emerald-500 rounded-r-full"
+                ></div>
+              </a>
+
+              <a
+                href="#"
+                class="flex items-center gap-3 px-3 pl-10 py-2 text-sm font-medium rounded-md text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white transition-colors"
+              >
+                <i class="ph-duotone ph-tree text-lg opacity-70"></i>
+                Meio Ambiente
+              </a>
+
+              <a
+                href="#"
+                class="flex items-center gap-3 px-3 pl-10 py-2 text-sm font-medium rounded-md text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white transition-colors"
+              >
+                <i class="ph-duotone ph-plant text-lg opacity-70"></i>
+                Agricultura
+              </a>
+
+              <a
+                href="#"
+                class="flex items-center gap-3 px-3 pl-10 py-2 text-sm font-medium rounded-md text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white transition-colors"
+              >
+                <i class="ph-duotone ph-bus text-lg opacity-70"></i>
+                Transporte
+              </a>
+
+              <a
+                href="#"
+                class="flex items-center gap-3 px-3 pl-10 py-2 text-sm font-medium rounded-md text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white transition-colors"
+              >
+                <i class="ph-duotone ph-factory text-lg opacity-70"></i>
+                Ind. e Comércio
+              </a>
+
+              <a
+                href="#"
+                class="flex items-center gap-3 px-3 pl-10 py-2 text-sm font-medium rounded-md text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white transition-colors"
+              >
+                <i class="ph-duotone ph-paint-brush text-lg opacity-70"></i>
+                Cultura
+              </a>
+
+              <a
+                href="#"
+                class="flex items-center gap-3 px-3 pl-10 py-2 text-sm font-medium rounded-md text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white transition-colors"
+              >
+                <i class="ph-duotone ph-airplane-tilt text-lg opacity-70"></i>
+                Turismo
+              </a>
+            </div>
+          </nav>
+        </div>
+      </div>
+
+      <div
+        class="py-2 px-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shrink-0"
+      >
+        <button
+          onclick="openSettingsModal()"
+          class="w-full flex items-center gap-3 hover:bg-slate-100 dark:hover:bg-slate-800 py-2 px-2.5 rounded-lg transition-colors group text-left"
+        >
+          <div
+            class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 font-bold text-xs"
+          >
+            OE
+          </div>
+          <div class="flex flex-col">
+            <span
+              class="text-xs font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"
+              >otavioesteves</span
+            >
+            <span class="text-[10px] text-slate-500">Configurações</span>
+          </div>
+          <i
+            class="ph ph-gear ml-auto mt-0.5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300"
+          ></i>
+        </button>
+      </div>
+    </aside>
+
+    <script>
+      // Funções de Utilidade e UI
+
+      // Lógica de Tema Refatorada para Suportar o Painel de Configurações
+      function setTheme(mode) {
+        const html = document.documentElement;
+        const checks = ["light", "dark", "system"];
+
+        // 1. Aplicar lógica no DOM e LocalStorage
+        if (mode === "dark") {
+          html.classList.add("dark");
+          localStorage.theme = "dark";
+        } else if (mode === "light") {
+          html.classList.remove("dark");
+          localStorage.theme = "light";
+        } else {
+          // System
+          localStorage.removeItem("theme");
+          if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            html.classList.add("dark");
+          } else {
+            html.classList.remove("dark");
+          }
+        }
+
+        // 2. Atualizar UI do Painel de Configurações (Radio Visual)
+        checks.forEach((c) => {
+          const el = document.getElementById(`check-${c}`);
+          if (el) {
+            if (c === mode) {
+              el.classList.remove("opacity-0");
+            } else {
+              el.classList.add("opacity-0");
+            }
+          }
+        });
+
+        // 3. Atualizar Borda do Card Selecionado (Estilo Ativo)
+        const buttons = document.querySelectorAll("#tab-theme button");
+        buttons.forEach((btn) => {
+          // Remove anel de foco "falso" manual se houver, ou classes de seleção
+          if (btn.onclick.toString().includes(mode)) {
+            btn.classList.add("ring-2", "ring-slate-900", "dark:ring-white");
+            btn.classList.remove("border-slate-200", "dark:border-slate-700"); // Remove borda padrão para dar destaque
+          } else {
+            btn.classList.remove("ring-2", "ring-slate-900", "dark:ring-white");
+            btn.classList.add("border-slate-200", "dark:border-slate-700");
+          }
+        });
+      }
+
+      // Função simplificada para o botão do Header (mantendo comportamento de toggle)
+      function toggleThemeHeader() {
+        const html = document.documentElement;
+        if (html.classList.contains("dark")) {
+          setTheme("light");
+        } else {
+          setTheme("dark");
+        }
+      }
+
+      // Inicializar estado visual do painel de tema ao abrir
+      function syncThemeUI() {
+        let currentMode = "system";
+        if ("theme" in localStorage) {
+          currentMode = localStorage.theme;
+        }
+        setTheme(currentMode); // Reaplica para garantir UI sincronizada
+      }
+
+      function toggleSubmenu(menuId, chevronId) {
+        const menu = document.getElementById(menuId);
+        const chevron = document.getElementById(chevronId);
+
+        if (menu.classList.contains("hidden")) {
+          menu.classList.remove("hidden");
+          chevron.style.transform = "rotate(180deg)";
+        } else {
+          menu.classList.add("hidden");
+          chevron.style.transform = "rotate(0deg)";
+        }
+      }
+
+      // --- FUNÇÃO DO NOVO FILTRO (FUTURO) ---
+      function toggleFilterMenu() {
+        // Placeholder para lógica futura de filtragem
+        // Pode abrir um Popover ou Modal pequeno
+        console.log("Abrir menu de filtros...");
+        alert("Funcionalidade de filtros em desenvolvimento.");
+      }
+
+      // --- CONTROLLER DO MODAL DE CONFIGURAÇÕES ---
+      const modalSettings = document.getElementById("modalSettings");
+      const modalSettingsContent = modalSettings.querySelector("div");
+
+      // Lógica de Tabs do Settings
+      function switchSettingsTab(tabName) {
+        // IDs das tabs - Adicionado 'about'
+        const tabs = ["profile", "security", "theme", "about"];
+
+        // Estilos de botão Ativo vs Inativo
+        const activeClasses = [
+          "bg-white",
+          "dark:bg-slate-800",
+          "text-slate-900",
+          "dark:text-white",
+          "shadow-sm",
+          "border",
+          "border-slate-200",
+          "dark:border-slate-700",
+          "font-semibold",
+        ];
+        const inactiveClasses = [
+          "text-slate-600",
+          "dark:text-slate-400",
+          "hover:bg-slate-100",
+          "dark:hover:bg-slate-800/50",
+          "hover:text-slate-900",
+          "dark:hover:text-white",
+          "font-medium",
+        ];
+
+        tabs.forEach((t) => {
+          const content = document.getElementById(`tab-${t}`);
+          const btn = document.getElementById(`nav-${t}`);
+
+          if (!content || !btn) return;
+
+          if (t === tabName) {
+            // Mostrar Tab
+            content.classList.remove("hidden");
+            // Estilizar Botão Ativo
+            btn.classList.remove(...inactiveClasses);
+            btn.classList.add(...activeClasses);
+          } else {
+            // Esconder Tab
+            content.classList.add("hidden");
+            // Estilizar Botão Inativo
+            btn.classList.remove(...activeClasses);
+            btn.classList.add(...inactiveClasses);
+          }
+        });
+
+        // Se abrir a aba tema, garantir que a UI esteja correta
+        if (tabName === "theme") {
+          syncThemeUI();
+        }
+      }
+
+      function openSettingsModal() {
+        modalSettings.classList.remove("hidden");
+        // Resetar para Profile ao abrir (padrão)
+        switchSettingsTab("profile");
+
+        // Fecha sidebar se estiver em mobile
+        if (!sidebar.classList.contains("-translate-x-full")) {
+          toggleSidebar();
+        }
+        requestAnimationFrame(() => {
+          modalSettings.classList.remove("opacity-0");
+          modalSettingsContent.classList.remove("scale-95");
+        });
+      }
+
+      function closeSettingsModal() {
+        modalSettings.classList.add("opacity-0");
+        modalSettingsContent.classList.add("scale-95");
+        setTimeout(() => {
+          modalSettings.classList.add("hidden");
+        }, 300);
+      }
+
+      modalSettings.addEventListener("click", (e) => {
+        if (e.target === modalSettings) closeSettingsModal();
+      });
+
+      // --- FIM CONTROLLER CONFIGURAÇÕES ---
+
+      // Modal Controller ODS (Existente)
+      const modal = document.getElementById("modalODS");
+      const modalContent = modal.querySelector("div");
+      const odsForm = document.getElementById("odsForm");
+      const modalTitle = document.getElementById("modalTitle");
+      const btnSubmit = document.getElementById("btnSubmit");
+
+      // Botão de Toggle View
+      const btnToggleView = document.getElementById("btnToggleView");
+      const iconToggleView = document.getElementById("iconToggleView");
+
+      // Seções do Modal
+      const formMainFields = document.getElementById("formMainFields");
+      const checklistSection = document.getElementById("checklistSection");
+
+      // Gerenciamento de Estado do Checklist
+      let currentChecklist = [];
+      let currentView = "details"; // 'details' ou 'checklist'
+
+      function renderChecklist() {
+        const container = document.getElementById("checklistContainer");
+        container.innerHTML = "";
+
+        if (currentChecklist.length === 0) {
+          container.innerHTML = `<li class="text-xs text-slate-400 dark:text-slate-500 italic py-2 text-center">Nenhum item adicionado</li>`;
+          return;
+        }
+
+        currentChecklist.forEach((item, index) => {
+          const li = document.createElement("li");
+          li.className =
+            "flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg group border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all";
+
+          li.innerHTML = `
+          <button type="button" onclick="toggleChecklistItem(${index})" class="flex-shrink-0 w-5 h-5 rounded border ${
+            item.done
+              ? "bg-slate-900 border-slate-900 dark:bg-slate-100 dark:border-slate-100"
+              : "bg-white border-slate-300 dark:bg-slate-800 dark:border-slate-600"
+          } flex items-center justify-center transition-colors">
+               <i class="ph ph-check text-white dark:text-slate-900 text-xs ${
+                 item.done ? "block" : "hidden"
+               }"></i>
+          </button>
+          <span class="text-sm flex-1 truncate ${
+            item.done
+              ? "line-through text-slate-400 dark:text-slate-500"
+              : "text-slate-700 dark:text-slate-200"
+          }">${item.text}</span>
+          <button type="button" onclick="removeChecklistItem(${index})" class="text-slate-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
+              <i class="ph ph-trash text-lg"></i>
+          </button>
+        `;
+          container.appendChild(li);
+        });
+      }
+
+      function addChecklistItem() {
+        const input = document.getElementById("inputChecklistItem");
+        const text = input.value.trim();
+
+        if (text) {
+          currentChecklist.push({ text: text, done: false });
+          input.value = "";
+          renderChecklist();
+          // Scroll para o fim da lista
+          const container = document.getElementById("checklistContainer");
+          setTimeout(() => (container.scrollTop = container.scrollHeight), 50);
+        }
+        input.focus();
+      }
+
+      function toggleChecklistItem(index) {
+        currentChecklist[index].done = !currentChecklist[index].done;
+        renderChecklist();
+      }
+
+      function removeChecklistItem(index) {
+        currentChecklist.splice(index, 1);
+        renderChecklist();
+      }
+
+      // Função para alternar visualização dentro do Modal
+      function toggleModalView() {
+        if (currentView === "details") {
+          // Muda para checklist
+          currentView = "checklist";
+          formMainFields.classList.add("hidden");
+          checklistSection.classList.remove("hidden");
+          // Ícone muda para info (para voltar aos detalhes)
+          iconToggleView.classList.replace("ph-list-checks", "ph-info");
+          btnToggleView.setAttribute("title", "Ver Detalhes");
+        } else {
+          // Muda para detalhes
+          currentView = "details";
+          checklistSection.classList.add("hidden");
+          formMainFields.classList.remove("hidden");
+          // Ícone muda para checklist
+          iconToggleView.classList.replace("ph-info", "ph-list-checks");
+          btnToggleView.setAttribute("title", "Ver Checklist");
+        }
+      }
+
+      function setView(view) {
+        currentView = view === "checklist" ? "details" : "checklist"; // Hack para o toggle inverter corretamente
+        toggleModalView();
+      }
+
+      function openModal(mode, data = null) {
+        // Reset genérico
+        odsForm.reset();
+        currentChecklist = [];
+
+        // Configuração de Título e Botão de Ação
+        if (mode === "create") {
+          modalTitle.innerText = "Nova Ordem de Serviço";
+          btnSubmit.innerText = "Criar ODS";
+          currentChecklist = [];
+        } else {
+          // 'edit' ou 'checklist' vêm com dados
+          modalTitle.innerText = `Editar ODS - ${data.id}`;
+          btnSubmit.innerText = "Salvar Alterações";
+
+          // Popula campos
+          document.getElementById("inputTitle").value = data.title;
+          document.getElementById("inputLocation").value = data.location;
+          document.getElementById("inputCategory").value = data.category;
+          document.getElementById("inputDate").value = data.date;
+          document.getElementById("inputUrgent").checked = data.urgent;
+          document.getElementById("inputObs").value = data.obs || "";
+
+          // Carrega checklist
+          currentChecklist = data.checklist
+            ? JSON.parse(JSON.stringify(data.checklist))
+            : [];
+        }
+
+        renderChecklist();
+
+        // Lógica de Visualização Inicial
+        // Se clicar no botão de checklist do card -> abre direto no checklist
+        // Se clicar no card (edit) ou criar -> abre detalhes
+        if (mode === "checklist") {
+          setView("checklist");
+        } else {
+          setView("details");
+        }
+
+        modal.classList.remove("hidden");
+        requestAnimationFrame(() => {
+          modal.classList.remove("opacity-0");
+          modalContent.classList.remove("scale-95");
+        });
+        modal.setAttribute("aria-hidden", "false");
+      }
+
+      function closeModal() {
+        modal.classList.add("opacity-0");
+        modalContent.classList.add("scale-95");
+        modal.setAttribute("aria-hidden", "true");
+        setTimeout(() => {
+          modal.classList.add("hidden");
+        }, 300);
+      }
+
+      // Fechar ao clicar fora (Overlay)
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) closeModal();
+      });
+
+      // Fechar com ESC (Global para ambos os modais)
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          if (!modal.classList.contains("hidden")) closeModal();
+          if (!modalSettings.classList.contains("hidden")) closeSettingsModal();
+        }
+      });
+
+      const sidebar = document.getElementById("sidebar");
+      const sidebarOverlay = document.getElementById("sidebarOverlay");
+
+      function toggleSidebar() {
+        const isClosed = sidebar.classList.contains("-translate-x-full");
+        if (isClosed) {
+          sidebarOverlay.classList.remove("hidden");
+          requestAnimationFrame(() => {
+            sidebarOverlay.classList.remove("opacity-0");
+            sidebar.classList.remove("-translate-x-full");
+          });
+        } else {
+          sidebar.classList.add("-translate-x-full");
+          sidebarOverlay.classList.add("opacity-0");
+          setTimeout(() => {
+            sidebarOverlay.classList.add("hidden");
+          }, 300);
+        }
+      }
+
+      // Fechar com ESC Sidebar
+      document.addEventListener("keydown", (e) => {
+        if (
+          e.key === "Escape" &&
+          !sidebar.classList.contains("-translate-x-full")
+        ) {
+          toggleSidebar();
+        }
+      });
+    </script>
+  </body>
+</html>
