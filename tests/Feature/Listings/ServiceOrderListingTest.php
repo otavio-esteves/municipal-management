@@ -4,10 +4,13 @@ namespace Tests\Feature\Listings;
 
 use App\Application\ServiceOrders\ListServiceOrders;
 use App\Domain\ServiceOrders\ServiceOrderStatus;
+use App\Livewire\Secretariat\ServiceOrderManager;
 use App\Models\Category;
 use App\Models\Secretariat;
 use App\Models\ServiceOrder;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class ServiceOrderListingTest extends TestCase
@@ -30,7 +33,7 @@ class ServiceOrderListingTest extends TestCase
             'is_urgent' => true,
         ]);
 
-        $listing = app(ListServiceOrders::class)->handle($secretariat->id, 'reparo', 5);
+        $listing = app(ListServiceOrders::class)->handle($secretariat->id, 'reparo', [], 5);
 
         $this->assertSame(3, $listing->summary['total']);
         $this->assertSame(3, $listing->summary['urgent']);
@@ -53,7 +56,7 @@ class ServiceOrderListingTest extends TestCase
             'status' => ServiceOrderStatus::Pending,
         ]);
 
-        $listing = app(ListServiceOrders::class)->handle($secretariat->id, '', 3);
+        $listing = app(ListServiceOrders::class)->handle($secretariat->id, '', [], 3);
 
         $this->assertSame(6, $listing->summary['total']);
         $this->assertSame(2, $listing->summary['completed']);
@@ -82,11 +85,92 @@ class ServiceOrderListingTest extends TestCase
             'status' => ServiceOrderStatus::Completed,
         ]);
 
-        $listing = app(ListServiceOrders::class)->handle($secretariat->id, '', 10);
+        $listing = app(ListServiceOrders::class)->handle($secretariat->id, '', [], 10);
 
         $this->assertSame(2, $listing->summary['total']);
         $this->assertSame(0, $listing->summary['urgent']);
         $this->assertSame(0, $listing->summary['completed']);
         $this->assertSame(2, $listing->serviceOrders->total());
+    }
+
+    public function test_service_order_listing_can_filter_by_category_status_and_urgency(): void
+    {
+        $secretariat = Secretariat::factory()->create();
+        $lighting = Category::factory()->create([
+            'secretariat_id' => $secretariat->id,
+            'name' => 'Iluminacao',
+        ]);
+        $cleaning = Category::factory()->create([
+            'secretariat_id' => $secretariat->id,
+            'name' => 'Limpeza',
+        ]);
+
+        ServiceOrder::factory()->forSecretariat($secretariat)->create([
+            'category_id' => $lighting->id,
+            'title' => 'Troca de lampada',
+            'status' => ServiceOrderStatus::Pending,
+            'is_urgent' => true,
+        ]);
+
+        ServiceOrder::factory()->forSecretariat($secretariat)->create([
+            'category_id' => $lighting->id,
+            'title' => 'Poste concluido',
+            'status' => ServiceOrderStatus::Completed,
+            'is_urgent' => true,
+        ]);
+
+        ServiceOrder::factory()->forSecretariat($secretariat)->create([
+            'category_id' => $cleaning->id,
+            'title' => 'Varricao comum',
+            'status' => ServiceOrderStatus::Completed,
+            'is_urgent' => false,
+        ]);
+
+        $listing = app(ListServiceOrders::class)->handle($secretariat->id, '', [
+            'category_id' => $lighting->id,
+            'status' => ServiceOrderStatus::Completed->value,
+            'urgent' => true,
+        ], 10);
+
+        $this->assertSame(1, $listing->summary['total']);
+        $this->assertSame(1, $listing->summary['urgent']);
+        $this->assertSame(1, $listing->summary['completed']);
+        $this->assertSame('Poste concluido', $listing->serviceOrders->items()[0]->title);
+    }
+
+    public function test_service_order_top_summary_cards_work_as_quick_filters(): void
+    {
+        $secretariat = Secretariat::factory()->create();
+        $category = Category::factory()->create(['secretariat_id' => $secretariat->id]);
+        $user = User::factory()->create(['secretariat_id' => $secretariat->id]);
+
+        ServiceOrder::factory()->forSecretariat($secretariat)->create([
+            'category_id' => $category->id,
+            'title' => 'Ordem urgente',
+            'status' => ServiceOrderStatus::Pending,
+            'is_urgent' => true,
+        ]);
+
+        ServiceOrder::factory()->forSecretariat($secretariat)->create([
+            'category_id' => $category->id,
+            'title' => 'Ordem concluida',
+            'status' => ServiceOrderStatus::Completed,
+            'is_urgent' => false,
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(ServiceOrderManager::class, ['secretariat' => $secretariat])
+            ->call('applyQuickFilter', 'urgent')
+            ->assertSet('quickFilter', 'urgent')
+            ->assertSee('Ordem urgente')
+            ->assertDontSee('Ordem concluida')
+            ->call('applyQuickFilter', 'completed')
+            ->assertSet('quickFilter', 'completed')
+            ->assertSee('Ordem concluida')
+            ->assertDontSee('Ordem urgente')
+            ->call('applyQuickFilter', 'total')
+            ->assertSet('quickFilter', '')
+            ->assertSee('Ordem urgente')
+            ->assertSee('Ordem concluida');
     }
 }

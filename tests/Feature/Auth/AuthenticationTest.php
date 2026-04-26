@@ -21,6 +21,31 @@ class AuthenticationTest extends TestCase
             ->assertSeeVolt('pages.auth.login');
     }
 
+    public function test_root_route_redirects_guest_users_to_login(): void
+    {
+        $this->get('/')
+            ->assertRedirect(route('login'));
+    }
+
+    public function test_root_route_redirects_admin_users_to_dashboard(): void
+    {
+        $user = User::factory()->admin()->create();
+
+        $this->actingAs($user)
+            ->get('/')
+            ->assertRedirect(route('dashboard'));
+    }
+
+    public function test_root_route_redirects_secretariat_users_to_their_service_order_panel(): void
+    {
+        $secretariat = Secretariat::factory()->create();
+        $user = User::factory()->forSecretariat($secretariat)->create();
+
+        $this->actingAs($user)
+            ->get('/')
+            ->assertRedirect(route('secretariats.ods', ['secretariat' => $secretariat->id]));
+    }
+
     public function test_admin_users_are_redirected_to_dashboard_after_login(): void
     {
         $user = User::factory()->admin()->create();

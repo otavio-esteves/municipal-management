@@ -11,8 +11,11 @@ class ListServiceOrders
         private readonly ServiceOrderRepository $serviceOrders,
     ) {}
 
-    public function handle(int $secretariatId, string $search = '', int $perPage = 15): ServiceOrderListResult
+    /**
+     * @param  array{category_id?:int|null,status?:string|null,urgent?:bool|null,quick_filter?:string|null}  $filters
+     */
+    public function handle(int $secretariatId, string $search = '', array $filters = [], int $perPage = 15): ServiceOrderListResult
     {
-        return $this->serviceOrders->listForSecretariat($secretariatId, $search, $perPage);
+        return $this->serviceOrders->listForSecretariat($secretariatId, $search, $filters, $perPage);
     }
 }

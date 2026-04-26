@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\ServiceOrders;
 
+use App\Application\ServiceOrders\ChangeServiceOrderStatus;
 use App\Application\ServiceOrders\CreateServiceOrder;
 use App\Application\ServiceOrders\Data\CreateServiceOrderData;
 use App\Application\ServiceOrders\Data\UpdateServiceOrderData;
@@ -301,5 +302,28 @@ class ServiceOrderDomainTest extends TestCase
         $this->expectException(InvalidServiceOrderStatusTransition::class);
 
         $serviceOrder->changeStatus(ServiceOrderStatus::Pending);
+    }
+
+    public function test_change_service_order_status_use_case_updates_scoped_record(): void
+    {
+        $secretariat = Secretariat::factory()->create();
+        $category = Category::factory()->create(['secretariat_id' => $secretariat->id]);
+        $serviceOrder = ServiceOrder::factory()->create([
+            'secretariat_id' => $secretariat->id,
+            'category_id' => $category->id,
+            'status' => ServiceOrderStatus::Pending,
+        ]);
+
+        $updated = app(ChangeServiceOrderStatus::class)->handle(
+            $secretariat->id,
+            $serviceOrder->id,
+            ServiceOrderStatus::InProgress,
+        );
+
+        $this->assertSame(ServiceOrderStatus::InProgress, $updated->status);
+        $this->assertDatabaseHas('service_orders', [
+            'id' => $serviceOrder->id,
+            'status' => ServiceOrderStatus::InProgress->value,
+        ]);
     }
 }

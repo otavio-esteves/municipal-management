@@ -65,6 +65,49 @@ class ServiceOrderAuthorizationTest extends TestCase
         ]);
     }
 
+    public function test_checklist_changes_are_saved_when_closing_edit_modal(): void
+    {
+        $secretariat = Secretariat::factory()->create();
+        $category = Category::factory()->create(['secretariat_id' => $secretariat->id]);
+        $user = User::factory()->create(['secretariat_id' => $secretariat->id]);
+        $serviceOrder = ServiceOrder::factory()->create([
+            'secretariat_id' => $secretariat->id,
+            'category_id' => $category->id,
+            'title' => 'ODS original',
+        ]);
+
+        $serviceOrder->checklistItems()->create([
+            'label' => 'Item existente',
+            'is_completed' => false,
+            'sort_order' => 0,
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(ServiceOrderManager::class, ['secretariat' => $secretariat])
+            ->call('edit', $serviceOrder->id, 'checklist')
+            ->set('title', 'Titulo nao salvo')
+            ->set('newChecklistItem', 'Nova etapa automatica')
+            ->call('closeModal')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('ods_checklists', [
+            'service_order_id' => $serviceOrder->id,
+            'label' => 'Nova etapa automatica',
+            'is_completed' => false,
+            'sort_order' => 1,
+        ]);
+
+        $this->assertDatabaseHas('service_orders', [
+            'id' => $serviceOrder->id,
+            'title' => 'ODS original',
+        ]);
+
+        $this->assertDatabaseMissing('service_orders', [
+            'id' => $serviceOrder->id,
+            'title' => 'Titulo nao salvo',
+        ]);
+    }
+
     public function test_secretariat_user_cannot_create_service_order_with_category_from_other_secretariat(): void
     {
         $ownSecretariat = Secretariat::factory()->create();
@@ -151,6 +194,49 @@ class ServiceOrderAuthorizationTest extends TestCase
             'id' => $serviceOrder->id,
             'title' => 'ODS externa',
             'secretariat_id' => $otherSecretariat->id,
+        ]);
+    }
+
+    public function test_secretariat_user_can_change_status_of_own_service_order(): void
+    {
+        $secretariat = Secretariat::factory()->create();
+        $category = Category::factory()->create(['secretariat_id' => $secretariat->id]);
+        $user = User::factory()->create(['secretariat_id' => $secretariat->id]);
+        $serviceOrder = ServiceOrder::factory()->create([
+            'secretariat_id' => $secretariat->id,
+            'category_id' => $category->id,
+            'status' => \App\Domain\ServiceOrders\ServiceOrderStatus::Pending,
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(ServiceOrderManager::class, ['secretariat' => $secretariat])
+            ->call('updateStatus', $serviceOrder->id, \App\Domain\ServiceOrders\ServiceOrderStatus::InProgress->value)
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('service_orders', [
+            'id' => $serviceOrder->id,
+            'status' => \App\Domain\ServiceOrders\ServiceOrderStatus::InProgress->value,
+        ]);
+    }
+
+    public function test_secretariat_user_cannot_change_status_of_service_order_from_another_secretariat(): void
+    {
+        $ownSecretariat = Secretariat::factory()->create();
+        $otherSecretariat = Secretariat::factory()->create();
+        $user = User::factory()->create(['secretariat_id' => $ownSecretariat->id]);
+        $serviceOrder = ServiceOrder::factory()->forSecretariat($otherSecretariat)->create([
+            'status' => \App\Domain\ServiceOrders\ServiceOrderStatus::Pending,
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(ServiceOrderManager::class, ['secretariat' => $ownSecretariat])
+            ->call('updateStatus', $serviceOrder->id, \App\Domain\ServiceOrders\ServiceOrderStatus::Completed->value)
+            ->assertSee('Ordem de servico nao encontrada para esta secretaria.');
+
+        $this->assertDatabaseHas('service_orders', [
+            'id' => $serviceOrder->id,
+            'secretariat_id' => $otherSecretariat->id,
+            'status' => \App\Domain\ServiceOrders\ServiceOrderStatus::Pending->value,
         ]);
     }
 

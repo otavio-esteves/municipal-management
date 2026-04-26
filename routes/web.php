@@ -8,7 +8,18 @@ use App\Models\Category;
 use App\Models\Secretariat;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'welcome');
+Route::get('/', function (ResolveUserHomeRoute $resolveUserHomeRoute) {
+    /** @var \App\Models\User|null $user */
+    $user = auth()->user();
+
+    if ($user === null) {
+        return redirect()->route('login');
+    }
+
+    $target = $resolveUserHomeRoute->handle($user);
+
+    return redirect()->route($target->routeName, $target->parameters);
+});
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', function (ResolveUserHomeRoute $resolveUserHomeRoute) {
